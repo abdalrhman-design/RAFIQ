@@ -124,6 +124,19 @@ button{font-family:inherit;cursor:pointer;border:0}
 .chip.brand img{height:38px;width:auto;display:block;filter:drop-shadow(0 2px 0 rgba(0,0,0,.25))}
 #celeBadge img{height:48px;width:auto;vertical-align:middle;margin-inline-end:10px;filter:drop-shadow(0 2px 0 rgba(0,0,0,.25))}
 @media (max-width:560px){.chip.brand img{height:30px}.logo{width:min(300px,90%)}}
+
+/* ---- POI labels + definition card ---- */
+#poiLayer{position:fixed;inset:0;pointer-events:none;z-index:6}
+.poi{position:absolute;left:0;top:0;pointer-events:auto;cursor:pointer;background:linear-gradient(180deg,#fdf3e3,#f4d9b7);color:#2e2014;border:3px solid var(--line);border-radius:999px;padding:4px 14px 4px 12px;font-family:inherit;font-weight:800;font-size:16px;white-space:nowrap;box-shadow:inset 0 2px 0 #fff,0 4px 0 var(--line),0 8px 14px rgba(0,0,0,.35);transform-origin:50% 100%;transition:opacity .15s;will-change:transform}
+.poi:after{content:"";position:absolute;left:50%;bottom:-11px;width:12px;height:12px;background:#f4d9b7;border-right:3px solid var(--line);border-bottom:3px solid var(--line);transform:translateX(-50%) rotate(45deg)}
+.poi:hover{background:linear-gradient(180deg,#ffd98a,#f6c265)}
+#poiCard{position:fixed;inset:0;z-index:12;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(10,20,19,.45);padding:16px}
+#poiCard.hidden{display:none}
+#poiCard .pic{font-size:46px;line-height:1;margin-bottom:6px;filter:drop-shadow(0 3px 0 rgba(0,0,0,.25))}
+#poiCard h3{margin:0 0 -14px;font-size:24px;font-weight:900;background:linear-gradient(180deg,#2fb3bf,#0c8192);color:#fff;text-shadow:0 2px 0 var(--line),1px 0 0 var(--line),-1px 0 0 var(--line);border:4px solid var(--line);border-radius:999px;padding:4px 26px;box-shadow:inset 0 3px 0 rgba(255,255,255,.4),0 6px 0 var(--line);position:relative;z-index:2;max-width:92vw;text-align:center}
+#poiCard p{margin:0 0 14px;font-size:18px;line-height:1.65;color:#2e2014;font-weight:600;text-align:center;background:linear-gradient(180deg,#fdf3e3,#f4d9b7);border:4px solid var(--line);border-radius:22px;padding:24px 22px 18px;box-shadow:inset 0 4px 0 #fff,0 8px 0 var(--line),0 18px 28px rgba(0,0,0,.45);width:min(560px,92vw)}
+#poiClose{position:absolute;top:14px;inset-inline-end:14px;width:44px;height:44px;border-radius:50%;border:3px solid var(--line);background:linear-gradient(180deg,#fdf3e3,#f4d9b7);font-size:20px;font-weight:900;color:#2e2014;box-shadow:0 4px 0 var(--line);cursor:pointer}
+@media (max-width:600px){.poi{font-size:14px;padding:3px 10px}#poiCard h3{font-size:20px}#poiCard p{font-size:16px;padding:20px 16px 14px}}
 </style>
 </head>
 <body>
@@ -580,7 +593,7 @@ function hykResolve(x,z,nx,nz){nx=clamp(nx,288.2,311.8);nz=clamp(nz,-26.4,-2.3);
   return[nx,nz]}
 const blobMat=new THREE.MeshBasicMaterial({color:0x2a1608,alphaMap:glowTex,transparent:true,opacity:.42,depthWrite:false});
 function blob(sx,sz){const m=new THREE.Mesh(new THREE.PlaneGeometry(sx,sz),blobMat);m.rotation.x=-Math.PI/2;m.position.y=.025;m.renderOrder=1;return m}
-function hykSpawn(asset,clipRe){const o=THREE.SkeletonUtils.clone(asset.scene);o.traverse(m=>{if(m.isMesh){m.castShadow=true;m.frustumCulled=false}});dress(o);{const ch=/chariot/i.test(asset.name||''),bl=ch?blob(3.4,6.5):blob(1.5,1.5);if(ch)bl.position.z=-.7;o.add(bl)}
+function hykSpawn(asset,clipRe){const o=THREE.SkeletonUtils.clone(asset.scene);o.userData.kind=asset.name;o.traverse(m=>{if(m.isMesh){m.castShadow=true;m.frustumCulled=false}});dress(o);{const ch=/chariot/i.test(asset.name||''),bl=ch?blob(3.4,6.5):blob(1.5,1.5);if(ch)bl.position.z=-.7;o.add(bl)}
   const clip=asset.animations.find(a=>clipRe.test(a.name)),mixer=clip?new THREE.AnimationMixer(o):null,act=clip?mixer.clipAction(clip):null;HYK.root.add(o);return{o,mixer,act}}
 function hykBuild(){const env=ASSETS.hyk_env.scene;HYK.root=new THREE.Group();HYK.root.add(env);scene.add(HYK.root);env.updateMatrixWorld(true);
   dress(env);env.traverse(o=>{if(!o.isMesh)return;
@@ -843,7 +856,8 @@ function frame(now){const dt=Math.min((now-last)/1000,.05);last=now;requestAnima
   // camera
   const kf=1-Math.exp(-dt*(G.state==="play"?5:4.2));camPos.lerp(goalPos,kf);camLook.lerp(goalLook,kf);camera.position.copy(camPos);camera.lookAt(camLook);skyDome.position.copy(camPos);
   sun.position.set(camLook.x+sunOff.x,sunOff.y,camLook.z+sunOff.z);if(G.world==="hyk"&&HYK.built)hykUpdate(dt,now/1000);sun.target.position.set(camLook.x,0,camLook.z);
-  renderer.render(scene,camera)}
+if(POI.key!==G.world+':'+exhibits.length+':'+HYK.ents.length)poiRefresh();poiFrame();
+    renderer.render(scene,camera)}
 function resize(){const w=innerWidth,h=innerHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.fov=w<h?62:50;camera.updateProjectionMatrix()}
 addEventListener('resize',resize);resize();
 
@@ -889,6 +903,45 @@ function celeStep(){const x=CEL.x,c=CEL.c;x.clearRect(0,0,c.width,c.height);let 
     else if(p.shape===0){x.fillRect(-p.r/2,-p.r/4,p.r,p.r/2)}else if(p.shape===1){x.beginPath();x.arc(0,0,p.r/2,0,6.283);x.fill()}else{x.fillRect(-p.r/3,-p.r/2,p.r/1.5,p.r)}x.restore()}
   if(alive)CEL.raf=requestAnimationFrame(celeStep);else{CEL.raf=0;CEL.p.length=0;x.clearRect(0,0,c.width,c.height)}}
 addEventListener('resize',()=>{if(CEL.c){CEL.c.width=innerWidth;CEL.c.height=innerHeight}});
+/* ---------- POI labels: name appears when the player is near; tap/click opens a definition card ---------- */
+const POI={list:[],els:[],open:null,R:5.5,_v:new THREE.Vector3()};
+function poiSet(list){POI.list=list||[];for(const el of POI.els)el.classList.add('hidden')}
+function poiLayer(){let L=$('poiLayer');if(!L){L=document.createElement('div');L.id='poiLayer';document.body.appendChild(L);
+    const card=document.createElement('div');card.id='poiCard';card.className='hidden';card.innerHTML='<button id="poiClose" aria-label="إغلاق">✕</button><div class="pic" id="poiIcon"></div><h3 id="poiTitle"></h3><p id="poiDesc"></p><button class="btn" id="poiOk">فهمت</button>';document.body.appendChild(card);
+    const close=()=>{card.classList.add('hidden');POI.open=null;if(typeof hush==="function")hush()};$('poiClose').onclick=$('poiOk').onclick=close;card.addEventListener('click',e=>{if(e.target===card)close()})}
+  return L}
+function poiOpen(p){const card=$('poiCard');POI.open=p;$('poiIcon').textContent=p.icon||"📌";$('poiTitle').textContent=p.name;$('poiDesc').innerHTML=typeof p.desc==="function"?p.desc():(p.desc||"");card.classList.remove('hidden');
+  if(typeof speak==="function"&&G.sound){const t=$('poiDesc').textContent;speak(p.name+". "+t)}}
+function poiFrame(){const L=poiLayer(),show=G.state==="play"&&!POI.open;let k=0;const W=innerWidth,H=innerHeight;
+  if(show){const cands=[];for(const p of POI.list){if(p.when&&!p.when())continue;let x,y,z;if(p.obj){p.obj.getWorldPosition(POI._v);x=POI._v.x;y=POI._v.y;z=POI._v.z}else{x=p.x;z=p.z;y=p.y!==undefined?p.y:(typeof p.yf==="function"?p.yf():0)}
+      const d=Math.hypot(P.x-x,P.z-z),R=p.r||POI.R;if(d>R)continue;cands.push({p,x,y:y+(p.h!==undefined?p.h:2.1),z,d})}
+    cands.sort((a,b)=>a.d-b.d);
+    for(const c of cands.slice(0,6)){POI._v.set(c.x,c.y,c.z).project(camera);if(POI._v.z>1)continue;const sx=(POI._v.x+1)/2*W,sy=(1-POI._v.y)/2*H;if(sx<-80||sx>W+80||sy<-40||sy>H+40)continue;
+      let el=POI.els[k];if(!el){el=document.createElement('button');el.className='poi';L.appendChild(el);POI.els[k]=el}k++;
+      el.classList.remove('hidden');el.textContent=(c.p.icon?c.p.icon+" ":"")+c.p.name;el.style.transform=`translate(-50%,-100%) translate(${sx.toFixed(1)}px,${sy.toFixed(1)}px) scale(${(.75+.35*(1-c.d/(c.p.r||POI.R))).toFixed(3)})`;
+      el.style.opacity=Math.min(1,((c.p.r||POI.R)-c.d)/1.2).toFixed(2);el.onclick=()=>poiOpen(c.p)}}
+  for(let i=k;i<POI.els.length;i++)POI.els[i].classList.add('hidden')}
+const poiStrip=s=>String(s).replace(/<[^>]+>/g,"");
+
+/* ---- POI data: history ---- */
+const HYK_POI={
+ hyk_warrior:{icon:"🛡️",name:"محارب من الهكسوس",h:2.3,desc:"الهكسوس قبائل جاءت من آسيا واستولت على منف. حارب جنودهم بأسلحة لم يعرفها المصريون من قبل: الخيول والعجلات الحربية والقوس المركّب، فتغلّبوا على جيش مصر في البداية."},
+ hyk_chariot:{icon:"🐎",name:"عجلة حربية",h:2.4,r:7,desc:"عربة خفيفة تجرّها الخيول دخلت مصر مع الهكسوس. تعلّم المصريون صناعتها واستخدامها، فصارت بعد ذلك سلاحًا مهمًّا في جيش الدولة الحديثة."},
+ hyk_farmer:{icon:"🌾",name:"فلاح مصري",h:2.2,desc:"يزرع القمح على ضفاف النيل، لكنه يحمل جزءًا من محصوله إلى جابي الضرائب؛ فقد فرض الهكسوس الضرائب على المصريين."},
+ hyk_official:{icon:"📜",name:"جابي الضرائب",h:2.3,desc:"موظف يجمع الضرائب من الفلاحين باسم حكام الهكسوس ويسجّلها. كان المصريون يدفعونها من محصولهم رغمًا عنهم."},
+};
+const HYK_STATIC=[
+ {x:300,z:-31,h:7,r:10,icon:"🏰",name:"قلعة أواريس",desc:"أواريس مدينة في شرق الدلتا اتخذها الهكسوس عاصمة لهم وحصّنوها بأسوار ضخمة. حكموا منها الوجه البحري، بينما بقي الوجه القبلي في يد حكام طيبة."},
+ {x:310,z:-24.5,h:3.4,r:6,icon:"⛺",name:"معسكر الهكسوس",desc:"خيام المحاربين حول النار، حيث يستريحون ويعدّون خيولهم وعجلاتهم الحربية للقتال."},
+ {x:291.5,z:-19.5,h:4,r:6,icon:"🏛️",name:"معبد مهدّم",desc:"دمّر الهكسوس المعابد المصرية ولم يحترموا معتقدات المصريين، وكان هذا من أسباب غضب المصريين عليهم وثورتهم بعد ذلك."},
+ {x:292.4,z:-12.6,h:2.8,r:5,icon:"⚖️",name:"محطة الضرائب",desc:"هنا يضع الفلاحون أكياس القمح ليسجّلها جابي الضرائب. فرض الهكسوس الضرائب على المصريين وأخذوا جزءًا من محاصيلهم."},
+ {x:294.8,z:-7.4,h:2.4,r:5,icon:"🗿",name:"تمثال ملك ساقط",desc:"تمثال لملك مصري سقط عن قاعدته. بعد الملك أمنمحات الثالث ضعف ملوك الدولة الوسطى وتنازع حكام الأقاليم على الحكم، فطمع الهكسوس في مصر."},
+];
+function poiRefresh(){POI.world=G.world;POI.key=G.world+':'+exhibits.length+':'+HYK.ents.length;
+  if(G.world==="hyk"){const L=HYK_STATIC.slice();for(const e of HYK.ents){const k=e.o&&e.o.userData.kind,d=HYK_POI[k];if(d)L.push(Object.assign({obj:e.o},d))}poiSet(L)}
+  else{poiSet(exhibits.map(ex=>{const E=ex.E,st=E.type==="statue";return{x:ex.pos.x,z:ex.pos.z,y:0,h:st?2.6:3.1,r:5.5,icon:st?"🗿":"🖼️",name:E.title,
+    desc:()=>G.mode==="study"?E.info.map(poiStrip).join(" "):(st?"تمثال":"لوحة")+" في قاعة «"+HALLS[E.hall].name.split(" · ")[0]+"». اقترب واضغط E ليسألك رفيق عنها، وستعرف قصتها."}}))}}
+
 window.__G={KG,scene,renderer,THREE,G,P,R,exhibits,gates,interact,wallet,caps,camPos,goalPos,ASSETS,kidArms,HYK,HCLUES,jumpTo};
 </script>
 </body>

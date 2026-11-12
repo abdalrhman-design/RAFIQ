@@ -1,0 +1,13 @@
+
+/* ---- POI labels + definition card ---- */
+#poiLayer{position:fixed;inset:0;pointer-events:none;z-index:6}
+.poi{position:absolute;left:0;top:0;pointer-events:auto;cursor:pointer;background:linear-gradient(180deg,#fdf3e3,#f4d9b7);color:#2e2014;border:3px solid var(--line);border-radius:999px;padding:4px 14px 4px 12px;font-family:inherit;font-weight:800;font-size:16px;white-space:nowrap;box-shadow:inset 0 2px 0 #fff,0 4px 0 var(--line),0 8px 14px rgba(0,0,0,.35);transform-origin:50% 100%;transition:opacity .15s;will-change:transform}
+.poi:after{content:"";position:absolute;left:50%;bottom:-11px;width:12px;height:12px;background:#f4d9b7;border-right:3px solid var(--line);border-bottom:3px solid var(--line);transform:translateX(-50%) rotate(45deg)}
+.poi:hover{background:linear-gradient(180deg,#ffd98a,#f6c265)}
+#poiCard{position:fixed;inset:0;z-index:12;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(10,20,19,.45);padding:16px}
+#poiCard.hidden{display:none}
+#poiCard .pic{font-size:46px;line-height:1;margin-bottom:6px;filter:drop-shadow(0 3px 0 rgba(0,0,0,.25))}
+#poiCard h3{margin:0 0 -14px;font-size:24px;font-weight:900;background:linear-gradient(180deg,#2fb3bf,#0c8192);color:#fff;text-shadow:0 2px 0 var(--line),1px 0 0 var(--line),-1px 0 0 var(--line);border:4px solid var(--line);border-radius:999px;padding:4px 26px;box-shadow:inset 0 3px 0 rgba(255,255,255,.4),0 6px 0 var(--line);position:relative;z-index:2;max-width:92vw;text-align:center}
+#poiCard p{margin:0 0 14px;font-size:18px;line-height:1.65;color:#2e2014;font-weight:600;text-align:center;background:linear-gradient(180deg,#fdf3e3,#f4d9b7);border:4px solid var(--line);border-radius:22px;padding:24px 22px 18px;box-shadow:inset 0 4px 0 #fff,0 8px 0 var(--line),0 18px 28px rgba(0,0,0,.45);width:min(560px,92vw)}
+#poiClose{position:absolute;top:14px;inset-inline-end:14px;width:44px;height:44px;border-radius:50%;border:3px solid var(--line);background:linear-gradient(180deg,#fdf3e3,#f4d9b7);font-size:20px;font-weight:900;color:#2e2014;box-shadow:0 4px 0 var(--line);cursor:pointer}
+@media (max-width:600px){.poi{font-size:14px;padding:3px 10px}#poiCard h3{font-size:20px}#poiCard p{font-size:16px;padding:20px 16px 14px}}

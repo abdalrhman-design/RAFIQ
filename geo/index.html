@@ -124,6 +124,19 @@ button{font-family:inherit;cursor:pointer;border:0}
 .chip.brand img{height:38px;width:auto;display:block;filter:drop-shadow(0 2px 0 rgba(0,0,0,.25))}
 #celeBadge img{height:48px;width:auto;vertical-align:middle;margin-inline-end:10px;filter:drop-shadow(0 2px 0 rgba(0,0,0,.25))}
 @media (max-width:560px){.chip.brand img{height:30px}.logo{width:min(300px,90%)}}
+
+/* ---- POI labels + definition card ---- */
+#poiLayer{position:fixed;inset:0;pointer-events:none;z-index:6}
+.poi{position:absolute;left:0;top:0;pointer-events:auto;cursor:pointer;background:linear-gradient(180deg,#fdf3e3,#f4d9b7);color:#2e2014;border:3px solid var(--line);border-radius:999px;padding:4px 14px 4px 12px;font-family:inherit;font-weight:800;font-size:16px;white-space:nowrap;box-shadow:inset 0 2px 0 #fff,0 4px 0 var(--line),0 8px 14px rgba(0,0,0,.35);transform-origin:50% 100%;transition:opacity .15s;will-change:transform}
+.poi:after{content:"";position:absolute;left:50%;bottom:-11px;width:12px;height:12px;background:#f4d9b7;border-right:3px solid var(--line);border-bottom:3px solid var(--line);transform:translateX(-50%) rotate(45deg)}
+.poi:hover{background:linear-gradient(180deg,#ffd98a,#f6c265)}
+#poiCard{position:fixed;inset:0;z-index:12;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(10,20,19,.45);padding:16px}
+#poiCard.hidden{display:none}
+#poiCard .pic{font-size:46px;line-height:1;margin-bottom:6px;filter:drop-shadow(0 3px 0 rgba(0,0,0,.25))}
+#poiCard h3{margin:0 0 -14px;font-size:24px;font-weight:900;background:linear-gradient(180deg,#2fb3bf,#0c8192);color:#fff;text-shadow:0 2px 0 var(--line),1px 0 0 var(--line),-1px 0 0 var(--line);border:4px solid var(--line);border-radius:999px;padding:4px 26px;box-shadow:inset 0 3px 0 rgba(255,255,255,.4),0 6px 0 var(--line);position:relative;z-index:2;max-width:92vw;text-align:center}
+#poiCard p{margin:0 0 14px;font-size:18px;line-height:1.65;color:#2e2014;font-weight:600;text-align:center;background:linear-gradient(180deg,#fdf3e3,#f4d9b7);border:4px solid var(--line);border-radius:22px;padding:24px 22px 18px;box-shadow:inset 0 4px 0 #fff,0 8px 0 var(--line),0 18px 28px rgba(0,0,0,.45);width:min(560px,92vw)}
+#poiClose{position:absolute;top:14px;inset-inline-end:14px;width:44px;height:44px;border-radius:50%;border:3px solid var(--line);background:linear-gradient(180deg,#fdf3e3,#f4d9b7);font-size:20px;font-weight:900;color:#2e2014;box-shadow:0 4px 0 var(--line);cursor:pointer}
+@media (max-width:600px){.poi{font-size:14px;padding:3px 10px}#poiCard h3{font-size:20px}#poiCard p{font-size:16px;padding:20px 16px 14px}}
 </style>
 </head>
 <body>
@@ -744,7 +757,8 @@ function frame(now){const dt=Math.min((now-last)/1000,.05),t=now/1000;last=now;r
   for(const f of CUR.anim)f(t,dt);weatherUpdate(dt,t);
   const kf=1-Math.exp(-dt*(G.state==="play"?5:4.2));camPos.lerp(goalPos,kf);camLook.lerp(goalLook,kf);camera.position.copy(camPos);camera.lookAt(camLook);skyDome.position.copy(camPos);
   sun.position.set(camLook.x+sunOff.x,camLook.y+sunOff.y,camLook.z+sunOff.z);sun.target.position.copy(camLook);
-  renderer.render(scene,camera)}
+if(POI.world!==(CUR&&CUR.id))poiRefresh();poiFrame();
+    renderer.render(scene,camera)}
 function resize(){const w=innerWidth,h=innerHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.fov=w<h?62:50;camera.updateProjectionMatrix()}
 addEventListener('resize',resize);resize();
 
@@ -778,6 +792,59 @@ function loadAssets(){const names=["earth","tex","kid","rafiq"];let done=0;const
   use("sample").then(s=>{caps.sample=s});
   use("tts").then(t=>{caps.tts=t;if(t)$('soundBtn').classList.remove('hidden')});
   use("dictation").then(d=>{caps.dict=d;if(d)try{setupDict(d)}catch(e){}})})();
+/* ---------- POI labels: name appears when the player is near; tap/click opens a definition card ---------- */
+const POI={list:[],els:[],open:null,R:5.5,_v:new THREE.Vector3()};
+function poiSet(list){POI.list=list||[];for(const el of POI.els)el.classList.add('hidden')}
+function poiLayer(){let L=$('poiLayer');if(!L){L=document.createElement('div');L.id='poiLayer';document.body.appendChild(L);
+    const card=document.createElement('div');card.id='poiCard';card.className='hidden';card.innerHTML='<button id="poiClose" aria-label="إغلاق">✕</button><div class="pic" id="poiIcon"></div><h3 id="poiTitle"></h3><p id="poiDesc"></p><button class="btn" id="poiOk">فهمت</button>';document.body.appendChild(card);
+    const close=()=>{card.classList.add('hidden');POI.open=null;if(typeof hush==="function")hush()};$('poiClose').onclick=$('poiOk').onclick=close;card.addEventListener('click',e=>{if(e.target===card)close()})}
+  return L}
+function poiOpen(p){const card=$('poiCard');POI.open=p;$('poiIcon').textContent=p.icon||"📌";$('poiTitle').textContent=p.name;$('poiDesc').innerHTML=typeof p.desc==="function"?p.desc():(p.desc||"");card.classList.remove('hidden');
+  if(typeof speak==="function"&&G.sound){const t=$('poiDesc').textContent;speak(p.name+". "+t)}}
+function poiFrame(){const L=poiLayer(),show=G.state==="play"&&!POI.open;let k=0;const W=innerWidth,H=innerHeight;
+  if(show){const cands=[];for(const p of POI.list){if(p.when&&!p.when())continue;let x,y,z;if(p.obj){p.obj.getWorldPosition(POI._v);x=POI._v.x;y=POI._v.y;z=POI._v.z}else{x=p.x;z=p.z;y=p.y!==undefined?p.y:(typeof p.yf==="function"?p.yf():0)}
+      const d=Math.hypot(P.x-x,P.z-z),R=p.r||POI.R;if(d>R)continue;cands.push({p,x,y:y+(p.h!==undefined?p.h:2.1),z,d})}
+    cands.sort((a,b)=>a.d-b.d);
+    for(const c of cands.slice(0,6)){POI._v.set(c.x,c.y,c.z).project(camera);if(POI._v.z>1)continue;const sx=(POI._v.x+1)/2*W,sy=(1-POI._v.y)/2*H;if(sx<-80||sx>W+80||sy<-40||sy>H+40)continue;
+      let el=POI.els[k];if(!el){el=document.createElement('button');el.className='poi';L.appendChild(el);POI.els[k]=el}k++;
+      el.classList.remove('hidden');el.textContent=(c.p.icon?c.p.icon+" ":"")+c.p.name;el.style.transform=`translate(-50%,-100%) translate(${sx.toFixed(1)}px,${sy.toFixed(1)}px) scale(${(.75+.35*(1-c.d/(c.p.r||POI.R))).toFixed(3)})`;
+      el.style.opacity=Math.min(1,((c.p.r||POI.R)-c.d)/1.2).toFixed(2);el.onclick=()=>poiOpen(c.p)}}
+  for(let i=k;i<POI.els.length;i++)POI.els[i].classList.add('hidden')}
+const poiStrip=s=>String(s).replace(/<[^>]+>/g,"");
+
+/* ---- POI data: geography ---- */
+const GEO_POI={
+ desert:[
+  {x:12,z:-15,h:3,r:8,icon:"🌴",name:"الواحة",desc:"مكان في الصحراء تظهر فيه المياه الجوفية على السطح، فينمو حوله النخيل ويعيش الناس والحيوانات."},
+  {x:-14,z:-12,h:3,r:6,icon:"🏕️",name:"خيمة البدو",desc:"البدو يسكنون خيامًا خفيفة يحملونها معهم، ويرحلون وراء الماء والعشب لرعي إبلهم وأغنامهم."},
+  {x:-11.6,z:-9.8,h:2.4,r:5,icon:"🌡️",name:"مقياس الحرارة",desc:"في الصحراء ترتفع الحرارة كثيرًا نهارًا وتنخفض ليلًا، لأن السماء صافية بلا سحب تحبس الدفء."},
+  {x:8.6,z:-6.6,h:2.7,r:5,icon:"🐪",name:"الجمل",desc:"سفينة الصحراء: يخزّن الدهن في سنامه، ويتحمّل العطش أيامًا، وأقدامه العريضة تمنعه من الغوص في الرمل."},
+  {x:17.2,z:-8.2,h:2.7,r:5,icon:"🐪",name:"الجمل",desc:"سفينة الصحراء: يخزّن الدهن في سنامه، ويتحمّل العطش أيامًا، وأقدامه العريضة تمنعه من الغوص في الرمل."},
+  {x:-9,z:13,h:2.6,r:6,icon:"🏜️",name:"كثيب رملي",desc:"تلّ من الرمال تكوّنه الرياح عندما تحمل حبّات الرمل وتتركها. الكثبان تتحرّك ببطء مع الريح."}],
+ forest:[
+  {x:4.2,z:-16,h:2.2,r:9,icon:"🏞️",name:"نهر الأمازون",desc:"أكبر أنهار العالم من حيث كمية الماء. تغذّيه الأمطار الغزيرة التي تهطل على الغابة طوال السنة."},
+  {x:6.4,z:-17.5,h:1.6,r:5,icon:"🛶",name:"قارب خشبي",desc:"سكان الغابة يتنقّلون بالقوارب لأن الأنهار هي طرقهم وسط الأشجار الكثيفة."},
+  {x:-9,z:-5,h:7,r:7,icon:"🌳",name:"شجرة عملاقة",desc:"أشجار الغابة الاستوائية دائمة الخضرة ومتفاوتة الارتفاع، وأوراقها الكثيفة تحجب الشمس عن الأرض."},
+  {x:-3.4,z:14.6,h:2.4,r:5,icon:"🌧️",name:"مقياس المطر",desc:"يقيس كمية المطر الساقط. في الغابة الاستوائية يمطر معظم أيام السنة لقربها من خط الاستواء."},
+  {x:-6.6,z:15.6,h:2.8,r:5,icon:"🌿",name:"نبات استوائي",desc:"أوراق عريضة كبيرة تلتقط أكبر قدر من الضوء القليل الذي يصل إلى أرض الغابة."}],
+ polar:[
+  {x:-8.6,z:11.4,h:2.6,r:6,icon:"📍",name:"علامة القطب الجنوبي",desc:"هنا أقصى جنوب الأرض. القطب الجنوبي يقع في قارة أنتاركتيكا، وهي يابسة مغطّاة بطبقة جليد سميكة."},
+  {x:-13.5,z:15,h:3,r:6,icon:"⛺",name:"خيمة البعثة",desc:"العلماء يعيشون في محطات وخيام مجهّزة ليدرسوا الجليد والطقس، فلا يسكن أحد القارة بشكل دائم."},
+  {x:11.8,z:.8,h:2.4,r:5,icon:"🔭",name:"تلسكوب الشمس",desc:"في الصيف القطبي تدور الشمس قرب الأفق ولا تغيب لشهور، وفي الشتاء يسود الليل شهورًا."},
+  {x:-.5,z:-14.5,h:2,r:7,icon:"🐧",name:"البطاريق",desc:"طيور لا تطير لكنها سبّاحة ماهرة. تعيش في نصف الكرة الجنوبي، وتحميها طبقة دهن سميكة وريش كثيف."},
+  {x:9.5,z:-14.5,h:1.8,r:5,icon:"🦭",name:"الفقمة",desc:"تصطاد السمك تحت الجليد وتتنفّس من فتحات فيه. طبقة الدهن تحتها تحفظ حرارتها."}],
+ mount:[
+  {x:-2.6,z:20,h:2.4,r:5,icon:"🌡️",name:"مقياس الحرارة",desc:"كلما ارتفعنا انخفضت الحرارة نحو ست درجات ونصف لكل ألف متر؛ لذلك القمم باردة رغم سطوع الشمس."},
+  {x:-.6,z:-3,h:2,r:6,icon:"💧",name:"جدول جبلي",desc:"ماء بارد يأتي من ذوبان الثلج في القمم. هكذا تبدأ الأنهار الكبيرة من الجبال."},
+  {x:-5,z:-27,h:3,r:7,icon:"❄️",name:"خط الثلج الدائم",desc:"فوق ارتفاع معيّن يبقى الثلج طوال السنة ولا يذوب. تحته تنمو النباتات وفوقه صخور وثلج فقط."},
+  {x:-5.5,z:-30,h:3.6,r:6,icon:"🎏",name:"أعلام الصلاة",desc:"أعلام ملوّنة يعلّقها سكان الهيمالايا في الممرات العالية، وتهتزّ بالرياح القوية في الأعالي."},
+  {xf:()=>pxM(-9)-7.4,z:-9,h:2.2,r:6,icon:"🐐",name:"الماعز الجبلي",desc:"يتسلّق الصخور شديدة الانحدار بحوافر قوية، ويعيش على النباتات القليلة في المرتفعات."}],
+};
+function poiRefresh(){POI.world=G.world;const W=CUR;if(!W||!GEO_POI[W.id]){poiSet([]);return}
+  const L=GEO_POI[W.id].map(p=>{const q=Object.assign({},p);if(q.xf){q.x=q.xf()}q.yf=()=>W.h(q.x,q.z);return q});
+  L.push({x:W.pod.x,z:W.pod.z,yf:()=>W.h(W.pod.x,W.pod.z),h:3.2,r:6,icon:"🚀",name:"مركبتنا",desc:"بها نعود إلى الفضاء لنختار عالمًا آخر. رفيق يسألك عن هذا العالم قبل الإقلاع."});
+  poiSet(L)}
+
 window.__G={KG,scene,renderer,THREE,G,P,R,WORLDS,WBY,enterWorld,showSpace,pickWorld,interact,caps,camPos,goalPos,camLook,goalLook,ASSETS,get CUR(){return CUR}};
 
 </script>
