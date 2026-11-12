@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>رفيق | الألعاب</title>
+<meta name="description" content="ألعاب رفيق التعليمية: التاريخ، الجغرافيا، الكيمياء، الفيزياء — الطفل يعلّم روبوته رفيق.">
+<link rel="icon" href="assets/mark.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--line:#101d1c;--ink:#2e2014;--teal:#0c8192;--teal2:#2fb3bf;--amber:#f6c265;--amber2:#e39a2a;--cream:#faeacf;--cream2:#f4d9b7}
+*{box-sizing:border-box}html,body{margin:0;height:100%}
+body{font-family:"Baloo Bhaijaan 2",system-ui,sans-serif;color:var(--ink);background:#0b1a1c url(assets/hub-bg.jpg) center/cover no-repeat fixed;min-height:100%;display:flex;flex-direction:column;align-items:center;overflow-x:hidden}
+body:before{content:"";position:fixed;inset:0;background:linear-gradient(180deg,rgba(11,26,28,.35) 0%,rgba(11,26,28,0) 25%,rgba(11,26,28,0) 50%,rgba(11,26,28,.72) 100%);pointer-events:none}
+main{position:relative;z-index:1;width:min(1180px,100%);padding:18px 16px 28px;display:flex;flex-direction:column;align-items:center;min-height:100%;justify-content:space-between}
+.logo{width:min(380px,70vw);height:auto;filter:drop-shadow(0 6px 0 rgba(16,29,28,.25)) drop-shadow(0 14px 20px rgba(0,0,0,.4));margin-top:4px}
+h1{margin:6px 0 0;font-size:clamp(20px,3.4vw,34px);font-weight:800;color:#fff;text-shadow:0 2px 0 var(--line),0 0 2px var(--line),1px 0 0 var(--line),-1px 0 0 var(--line),0 6px 14px rgba(0,0,0,.45)}
+.sub{margin:2px 0 0;font-size:clamp(14px,1.8vw,18px);font-weight:700;color:var(--cream);text-shadow:0 2px 0 var(--line),0 0 2px var(--line),0 4px 10px rgba(0,0,0,.4)}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;width:100%;margin-top:auto}
+.card{position:relative;display:flex;flex-direction:column;align-items:center;text-align:center;text-decoration:none;color:var(--ink);background:linear-gradient(180deg,#fdf3e3 0%,#f4d9b7 60%,#ecc99c 100%);border:4px solid var(--line);border-radius:26px;padding:14px 12px 14px;box-shadow:inset 0 4px 0 #fff,inset 0 -6px 0 rgba(84,63,42,.25),0 8px 0 var(--line),0 18px 28px rgba(0,0,0,.45);transition:transform .15s,box-shadow .15s}
+.card:hover,.card:focus-visible{transform:translateY(-6px);box-shadow:inset 0 4px 0 #fff,inset 0 -6px 0 rgba(84,63,42,.25),0 14px 0 var(--line),0 26px 34px rgba(0,0,0,.5);outline:none}
+.card:active{transform:translateY(4px);box-shadow:inset 0 4px 0 #fff,inset 0 -6px 0 rgba(84,63,42,.25),0 2px 0 var(--line),0 8px 14px rgba(0,0,0,.4)}
+.plate{width:100%;aspect-ratio:1.25;border-radius:18px;border:3px solid var(--line);display:grid;place-items:end center;font-size:clamp(26px,3vw,36px);box-shadow:inset 0 4px 0 rgba(255,255,255,.35),inset 0 -8px 0 rgba(0,0,0,.18);position:relative;overflow:hidden;background-size:cover;background-position:center 30%}
+.plate:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.18),rgba(255,255,255,0) 30%,rgba(16,29,28,0) 70%,rgba(16,29,28,.25))}
+.plate span{position:relative;z-index:1;margin-bottom:6px;background:rgba(253,243,227,.92);border:2px solid var(--line);border-radius:999px;padding:0 10px;line-height:1.3;box-shadow:0 3px 0 var(--line)}
+.hist .plate{background-image:url(assets/card-hist.jpg)}.geo .plate{background-image:url(assets/card-geo.jpg)}.chem .plate{background-image:url(assets/card-chem.jpg)}.phys .plate{background-image:url(assets/card-phys.jpg)}
+.card h2{margin:10px 0 0;font-size:clamp(17px,2vw,23px);font-weight:800;color:var(--ink)}
+.card p{margin:2px 0 10px;font-size:clamp(12px,1.3vw,14.5px);font-weight:600;color:#5a4632;line-height:1.35;min-height:2.7em}
+.btn{display:inline-block;background:linear-gradient(180deg,#ffd98a 0%,#f6c265 50%,#e39a2a 100%);color:#fff;border:3px solid var(--line);border-radius:999px;padding:6px 26px;font-weight:900;font-size:17px;text-shadow:0 2px 0 #7a4a12,1px 0 0 #7a4a12,-1px 0 0 #7a4a12;box-shadow:inset 0 3px 0 rgba(255,255,255,.55),0 5px 0 var(--line)}
+.tag{position:absolute;top:-12px;inset-inline-start:14px;background:linear-gradient(180deg,#2fb3bf,#0c8192);color:#fff;border:3px solid var(--line);border-radius:999px;font-size:12px;font-weight:800;padding:1px 10px;text-shadow:0 1px 0 var(--line)}
+.bar{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;margin-top:14px;color:var(--cream);font-weight:700;font-size:14px;text-shadow:0 1px 0 var(--line),0 0 2px var(--line)}
+.tog{display:flex;align-items:center;gap:8px;background:rgba(16,29,28,.55);border:2px solid rgba(255,255,255,.25);border-radius:999px;padding:4px 12px;cursor:pointer;user-select:none}
+.tog input{accent-color:var(--amber2);width:18px;height:18px}
+footer{position:relative;z-index:1;color:rgba(250,234,207,.75);font-size:12px;font-weight:600;padding:0 0 12px;text-shadow:0 1px 0 var(--line)}
+@media (max-width:860px){.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.card{padding:10px 10px 12px;border-radius:20px}.plate{aspect-ratio:1.8}.card p{min-height:0}}
+@media (max-width:420px){.grid{grid-template-columns:1fr 1fr;gap:10px}.btn{font-size:14px;padding:4px 18px}}
+@media (max-height:640px) and (orientation:landscape){main{padding-top:8px}.logo{width:190px}h1{font-size:19px;margin-top:0}.sub{display:none}.grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.card{padding:8px 8px 10px;border-radius:18px}.plate{aspect-ratio:1.6;font-size:22px}.card p{display:none}.card h2{font-size:15px;margin-top:6px}.btn{font-size:14px;padding:3px 16px;margin-top:4px}.bar{margin-top:8px;font-size:12px}}
+</style>
+</head>
+<body>
+<main>
+  <header style="text-align:center">
+    <picture><source srcset="assets/logo.webp" type="image/webp"><img class="logo" src="assets/logo.png" alt="Rafiq"></picture>
+    <h1>اختر ما تلعبه اليوم مع رفيق</h1>
+    <p class="sub">في كل لعبة، أنت المعلّم ورفيق التلميذ: اكتشف، ثم اشرح له.</p>
+  </header>
+  <nav class="grid" aria-label="الألعاب">
+    <a class="card hist" href="history/"><span class="tag">تاريخ</span><div class="plate"><span>🏛️</span></div><h2>معرض التاريخ</h2><p>مصر القديمة: الدولة القديمة والوسطى والحديثة، وعالم الهكسوس</p><span class="btn">العب</span></a>
+    <a class="card geo" href="geo/"><span class="tag">جغرافيا</span><div class="plate"><span>🌍</span></div><h2>رحلة حول الأرض</h2><p>أربعة عوالم: الصحراء والغابة والقطب والجبال</p><span class="btn">العب</span></a>
+    <a class="card chem" href="chem/"><span class="tag">كيمياء</span><div class="plate"><span>🧪</span></div><h2>معمل الكيمياء</h2><p>اخلط 17 مادة واكتشف 22 ظاهرة على ست طاولات</p><span class="btn">العب</span></a>
+    <a class="card phys" href="phys/"><span class="tag">فيزياء</span><div class="plate"><span>⚙️</span></div><h2>معمل الفيزياء</h2><p>سبع طاولات: قوى، بندول، رافعة، مغناطيس، كهرباء، ضوء، صوت</p><span class="btn">العب</span></a>
+  </nav>
+  <div class="bar">
+    <label class="tog"><input type="checkbox" id="lite"> وضع خفيف للتابلت (بدون ظلال)</label>
+    <span id="hint" style="opacity:.8">يعمل على Chrome وSafari · الصوت والمايك بإذن المتصفح</span>
+  </div>
+</main>
+<footer>رفيق — الطفل يعلّم روبوته · © Rafiq</footer>
+<script>
+(function(){const k='rafiq_lite',c=document.getElementById('lite');c.checked=localStorage.getItem(k)==='1'||matchMedia('(pointer:coarse)').matches&&localStorage.getItem(k)===null;
+const apply=()=>{localStorage.setItem(k,c.checked?'1':'0');document.querySelectorAll('.card').forEach(a=>{a.href=a.getAttribute('href').split('#')[0]+(c.checked?'#lite':'')})};c.onchange=apply;apply();
+document.querySelectorAll('.card').forEach(a=>a.addEventListener('click',()=>{try{navigator.vibrate&&navigator.vibrate(12)}catch(e){}}))})();
+</script>
+</body>
+</html>
