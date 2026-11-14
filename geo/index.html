@@ -1007,7 +1007,7 @@ function mergeGeos(list){let n=0,ni=0;for(const g of list){n+=g.attributes.posit
   const m=new THREE.BufferGeometry();m.setAttribute('position',new THREE.BufferAttribute(P,3));m.setAttribute('normal',new THREE.BufferAttribute(N,3));m.setAttribute('uv',new THREE.BufferAttribute(U,2));m.setIndex(new THREE.BufferAttribute(I,1));return m}
 let LEAF=null;function leafMat(color){if(!LEAF){const c=document.createElement('canvas');c.width=64;c.height=256;const x=c.getContext('2d');x.fillStyle='#fff';
   x.beginPath();x.moveTo(32,254);x.lineTo(32,4);x.stroke();for(let i=0;i<22;i++){const y=246-i*11,w=26*(1-i/24);x.beginPath();x.ellipse(32-w/2,y,w/2,4.5,-.5,0,7);x.ellipse(32+w/2,y,w/2,4.5,.5,0,7);x.fill()}x.fillRect(31,4,2,250);LEAF=new THREE.CanvasTexture(c)}
-  const m=new THREE.MeshStandardMaterial({color,map:LEAF,alphaTest:.5,side:THREE.DoubleSide,roughness:.7,envMapIntensity:.3});m.userData.noPbr=true;return m}
+  const m=new THREE.MeshStandardMaterial({color:new THREE.Color(color).multiplyScalar(.55),map:LEAF,alphaTest:.5,side:THREE.DoubleSide,roughness:.88,envMapIntensity:.12});m.userData.noPbr=true;return m}
 const CACHE={};
 function swapGeo(g){const c=k=>CACHE[k];g.traverse(o=>{if(!o.isInstancedMesh)return;const P=o.geometry.parameters||{},t=o.geometry.type,col=o.material.color?o.material.color.getHex():0;
   if(t==="ConeGeometry"&&P.radius===1&&P.height===1&&P.radialSegments===7){o.geometry=c('pine')||(CACHE.pine=pineTier());o.material.flatShading=false;o.material.side=THREE.DoubleSide;o.material.needsUpdate=true}
