@@ -144,7 +144,7 @@ button{font-family:inherit;cursor:pointer;border:0}
 
 <div id="hud" class="hidden">
   <div style="display:flex;gap:8px;align-items:center">
-    <div class="chip brand" title="Rafiq"><picture><source srcset="assets/mark.webp" type="image/webp"><img src="../assets/mark.png" alt=""></picture></div>
+    <div class="chip brand" title="Rafiq"><picture><source srcset="../assets/mark.webp" type="image/webp"><img src="../assets/mark.png" alt=""></picture></div>
     <div class="chip"><span class="ico ico-star"></span><span id="pts">0</span></div>
     <div class="chip hidden" id="clueChip"><span class="ico ico-mag"></span><span id="clueTxt">0/4</span></div>
     <div class="chip" id="keyChip" title="ثمن المفتاح"><span class="ico ico-key"></span><div id="keybar"><div id="keyfill"></div></div> <span id="keyTxt">0/40</span></div>
@@ -217,8 +217,114 @@ button{font-family:inherit;cursor:pointer;border:0}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="../web-shim.js"></script>
+<script>window.__PBR_BASE="../assets/pbr/"</script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/utils/SkeletonUtils.js"></script>
+<script>/*PBR*/
+/* Rafiq PBR layer — shared by all curriculum games (three r128).
+   PBR.set(name)            -> {a,n,r} textures from assets/pbr/<name>_a.webp (_n.webp, _r.webp optional)
+   PBR.apply(mat, name, scale, opts) -> triplanar albedo + normal + roughness on any MeshStandard/Physical material
+   PBR.mat(name, scale, opts)        -> new MeshStandardMaterial already PBR'd
+   PBR.roomEnv(renderer, opts)       -> PMREM texture of a lit interior (replaces gradient makeEnv for rooms)
+   PBR.skyEnv(renderer, top,mid,bot,sun) -> PMREM of a sky with a sun blob (outdoor worlds)
+   PBR.tune(renderer)                -> renderer defaults (shadows, tone mapping)
+   Texture files are optional: a missing map simply leaves that channel off. */
+(function(){
+"use strict";
+const LITE=/lite/.test(location.hash);
+const BASE=(window.__PBR_BASE||"assets/pbr/");
+const cache={};
+const loader=new THREE.TextureLoader();
+const AVG={};
+function measure(t){try{const im=t.image,c=document.createElement('canvas');c.width=c.height=8;const x=c.getContext('2d');x.drawImage(im,0,0,8,8);const d=x.getImageData(0,0,8,8).data;let r=0,g=0,b=0;
+  const L=v=>{v/=255;return v<=.04045?v/12.92:Math.pow((v+.055)/1.055,2.4)};for(let i=0;i<d.length;i+=4){r+=L(d[i]);g+=L(d[i+1]);b+=L(d[i+2])}const n=d.length/4;t.userData.avg=new THREE.Vector3(n/Math.max(r,1e-3),n/Math.max(g,1e-3),n/Math.max(b,1e-3));
+  for(const u of (t.userData.users||[]))u.value.copy(t.userData.avg)}catch(e){}}
+function tex(url,srgb){const t=loader.load(url,()=>{t.needsUpdate=true;if(srgb)measure(t)},undefined,()=>{t.userData.missing=true});t.userData=t.userData||{};t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=LITE?4:8;if(srgb)t.encoding=THREE.sRGBEncoding;t.flipY=false;return t}
+function set(name){if(cache[name])return cache[name];const s={name,a:tex(BASE+name+"_a.webp",true),n:LITE?null:tex(BASE+name+"_n.webp",false),r:LITE?null:tex(BASE+name+"_r.webp",false)};cache[name]=s;return s}
+const VERT_DECL='varying vec3 vPbrP;varying vec3 vPbrN;\n';
+const VERT_BODY='\nvPbrP=(modelMatrix*vec4(transformed,1.)).xyz;vPbrN=normalize(mat3(modelMatrix)*objectNormal);';
+function apply(m,name,scale,o={}){const s=typeof name==="string"?set(name):name;if(!s)return m;
+  const keep=o.keep!==false,inv={value:new THREE.Vector3(1,1,1)};if(keep&&s.a){if(s.a.userData.avg)inv.value.copy(s.a.userData.avg);(s.a.userData.users=s.a.userData.users||[]).push(inv)}
+  const s2=o.slope?set(o.slope.tex):null,inv2={value:new THREE.Vector3(1,1,1)};if(s2&&keep&&s2.a){if(s2.a.userData.avg)inv2.value.copy(s2.a.userData.avg);(s2.a.userData.users=s2.a.userData.users||[]).push(inv2)}
+  const u={pInv:inv,pInv2:inv2,pA2:{value:s2?s2.a:null},pN2:{value:s2?s2.n:null},pS2:{value:o.slope?o.slope.scale||scale:1},pSl:{value:new THREE.Vector2(o.slope?o.slope.lo||.72:0,o.slope?o.slope.hi||.86:1)},pA:{value:s.a},pN:{value:s.n},pR:{value:s.r},pS:{value:scale||.5},pK:{value:o.normal==null?1:o.normal},pMix:{value:o.mix==null?1:o.mix},pRough:{value:o.rough==null?1:o.rough},pOff:{value:new THREE.Vector3(o.ox||0,o.oy||0,o.oz||0)}};
+  const hasN=!!s.n&&!LITE,hasR=!!s.r&&!LITE;
+  m.userData.pbr={name:s.name,u};
+  const hasS=!!s2;m.customProgramCacheKey=()=>'pbr'+(hasN?1:0)+(hasR?1:0)+(hasS?1:0);
+  m.onBeforeCompile=sh=>{Object.assign(sh.uniforms,u);
+    sh.vertexShader=VERT_DECL+sh.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>'+VERT_BODY);
+    let f=(hasS?'#define PBR_SLOPE\n':'')+'uniform vec3 pInv;uniform vec3 pInv2;uniform sampler2D pA2;uniform sampler2D pN2;uniform float pS2;uniform vec2 pSl;uniform sampler2D pA;uniform sampler2D pN;uniform sampler2D pR;uniform float pS;uniform float pK;uniform float pMix;uniform float pRough;uniform vec3 pOff;varying vec3 vPbrP;varying vec3 vPbrN;\n'+
+      'vec3 pbrBW(){vec3 b=pow(abs(normalize(vPbrN)),vec3(8.));return b/(b.x+b.y+b.z);}\n'+
+      'float pbrSlope(){return 1.-smoothstep(pSl.x,pSl.y,normalize(vPbrN).y);}\n'+'vec4 pbrTri2(sampler2D t,vec3 bw){vec3 p=(vPbrP+pOff)*pS2;return texture2D(t,p.zy)*bw.x+texture2D(t,p.xz)*bw.y+texture2D(t,p.xy)*bw.z;}\n'+'vec4 pbrTri(sampler2D t,vec3 bw){vec3 p=(vPbrP+pOff)*pS;if(bw.x>.985)return texture2D(t,p.zy);if(bw.y>.985)return texture2D(t,p.xz);if(bw.z>.985)return texture2D(t,p.xy);return texture2D(t,p.zy)*bw.x+texture2D(t,p.xz)*bw.y+texture2D(t,p.xy)*bw.z;}\n';
+    f+=sh.fragmentShader;
+    f=f.replace('#include <map_fragment>','#include <map_fragment>\n{vec3 bw=pbrBW();vec4 tc=pbrTri(pA,bw);tc=sRGBToLinear(tc);vec3 td=tc.rgb*pInv;\n#ifdef PBR_SLOPE\n{float sw=pbrSlope();if(sw>.001){vec3 t2=sRGBToLinear(pbrTri2(pA2,bw)).rgb*pInv2;td=mix(td,t2,sw);}}\n#endif\ndiffuseColor.rgb=mix(diffuseColor.rgb,diffuseColor.rgb*min(td,vec3(2.)),pMix);}');
+    if(hasR)f=f.replace('#include <roughnessmap_fragment>','#include <roughnessmap_fragment>\n{vec3 bw=pbrBW();float rr=pbrTri(pR,bw).g;roughnessFactor=clamp(roughnessFactor*mix(1.,rr*1.6,pRough),.04,1.);}');
+    if(hasN)f=f.replace('#include <normal_fragment_maps>','#include <normal_fragment_maps>\n{vec3 bw=pbrBW();vec3 n=normalize(vPbrN);vec3 p=(vPbrP+pOff)*pS;'+
+      'vec3 tx=vec3(0.,0.,1.),ty=tx,tz=tx;if(bw.x>.015)tx=texture2D(pN,p.zy).xyz*2.-1.;if(bw.y>.015)ty=texture2D(pN,p.xz).xyz*2.-1.;if(bw.z>.015)tz=texture2D(pN,p.xy).xyz*2.-1.;tx.xy*=pK;ty.xy*=pK;tz.xy*=pK;'+
+      'vec3 nx=vec3(tx.xy+n.zy,abs(tx.z)*n.x);vec3 ny=vec3(ty.xy+n.xz,abs(ty.z)*n.y);vec3 nz=vec3(tz.xy+n.xy,abs(tz.z)*n.z);'+
+      'vec3 wn=normalize(nx.zyx*bw.x+ny.xzy*bw.y+nz.xyz*bw.z);'+
+      '\n#ifdef PBR_SLOPE\n{float sw=pbrSlope();if(sw>.001){vec3 q=(vPbrP+pOff)*pS2;vec3 sx=texture2D(pN2,q.zy).xyz*2.-1.,sy=texture2D(pN2,q.xz).xyz*2.-1.,sz=texture2D(pN2,q.xy).xyz*2.-1.;sx.xy*=pK;sy.xy*=pK;sz.xy*=pK;vec3 w2=normalize(vec3(sx.xy+n.zy,abs(sx.z)*n.x).zyx*bw.x+vec3(sy.xy+n.xz,abs(sy.z)*n.y).xzy*bw.y+vec3(sz.xy+n.xy,abs(sz.z)*n.z)*bw.z);wn=normalize(mix(wn,w2,sw));}}\n#endif\n'+
+      'normal=normalize((viewMatrix*vec4(wn,0.)).xyz);}');
+    sh.fragmentShader=f};
+  m.needsUpdate=true;return m}
+function mat(name,scale,o={}){const m=new THREE.MeshStandardMaterial(Object.assign({color:o.color==null?0xffffff:o.color,roughness:o.roughness==null?.8:o.roughness,metalness:o.metalness||0,envMapIntensity:o.env==null?.6:o.env},o.extra||{}));return apply(m,name,scale,Object.assign({keep:false},o))}
+/* interior environment: a cream room with warm ceiling panels and one cool window wall → believable reflections on glass/metal */
+function roomEnv(renderer,o={}){const pm=new THREE.PMREMGenerator(renderer);const sc=new THREE.Scene();const W=o.w||14,H=o.h||6,D=o.d||10;
+  /* capture point sits at eye height (1.5 m): shift the whole room down so the PMREM camera is inside it, not on the floor plane */
+  const R=new THREE.Group();R.position.y=-1.5;sc.add(R);
+  const wall=new THREE.MeshBasicMaterial({color:o.wall||0xeadfcb,side:THREE.BackSide});const room=new THREE.Mesh(new THREE.BoxGeometry(W,H,D),wall);room.position.y=H/2;R.add(room);
+  const fl=new THREE.Mesh(new THREE.PlaneGeometry(W,D),new THREE.MeshBasicMaterial({color:o.floor||0xd8ccb4}));fl.rotation.x=-Math.PI/2;fl.position.y=.02;R.add(fl);
+  const ce=new THREE.Mesh(new THREE.PlaneGeometry(W,D),new THREE.MeshBasicMaterial({color:o.ceil||0xf3ece0}));ce.rotation.x=Math.PI/2;ce.position.y=H-.02;R.add(ce);
+  const lamp=new THREE.MeshBasicMaterial({color:new THREE.Color(o.lamp||0xfff3dc).multiplyScalar(3)});for(const x of[-W*.3,0,W*.3])for(const z of[-D*.25,D*.25]){const l=new THREE.Mesh(new THREE.BoxGeometry(2.2,.05,.9),lamp);l.position.set(x,H-.08,z);R.add(l)}
+  const win=new THREE.Mesh(new THREE.PlaneGeometry(W*.8,H*.4),new THREE.MeshBasicMaterial({color:new THREE.Color(o.window||0xd6ecff).multiplyScalar(1.8)}));win.position.set(0,H*.6,-D/2+.03);R.add(win);
+  const dado=new THREE.Mesh(new THREE.BoxGeometry(W-.05,1.1,D-.05),new THREE.MeshBasicMaterial({color:o.dado||0x3a9aa6,side:THREE.BackSide}));dado.position.y=.55;R.add(dado);
+  const t=pm.fromScene(sc,.035).texture;pm.dispose();return t}
+function skyEnv(renderer,top,mid,bot,sun){const pm=new THREE.PMREMGenerator(renderer);const sc=new THREE.Scene(),g=new THREE.SphereGeometry(20,32,16),pa=g.attributes.position,col=[],ct=new THREE.Color(top),cm=new THREE.Color(mid),cb=new THREE.Color(bot),c=new THREE.Color();
+  for(let i=0;i<pa.count;i++){const h=pa.getY(i)/20;c.copy(cm).lerp(h>0?ct:cb,Math.pow(Math.abs(h),.5));col.push(c.r,c.g,c.b)}
+  g.setAttribute('color',new THREE.Float32BufferAttribute(col,3));sc.add(new THREE.Mesh(g,new THREE.MeshBasicMaterial({vertexColors:true,side:THREE.BackSide})));
+  if(sun){const q=new THREE.Mesh(new THREE.SphereGeometry(1.2,12,8),new THREE.MeshBasicMaterial({color:sun.color||0xfff2d0}));q.position.set(sun.x*15,sun.y*15,sun.z*15);sc.add(q)}
+  const t=pm.fromScene(sc,.03).texture;pm.dispose();return t}
+/* dress(root, rules): convert every untextured MeshStandard material under root.
+   rule = {when:(m,hex)=>bool, tex, scale, keep(bool: keep base colour as tint), color, rough, metal, env, normal, mix}
+   first matching rule wins; materials are converted once (shared materials stay shared). */
+function dress(root,rules){const done=new Set();let n=0;
+  root.traverse(o=>{if(!o.isMesh||o.isSprite)return;const ms=Array.isArray(o.material)?o.material:[o.material];
+    for(const m of ms){if(!m||done.has(m.uuid)||!m.isMeshStandardMaterial||m.map||m.userData.pbr||m.userData.noPbr||m.userData.detail)continue;done.add(m.uuid);
+      const hex=m.color.getHex();const r=rules.find(r=>r.when(m,hex));if(!r)continue;
+      if(!r.keep&&r.color!=null)m.color.setHex(r.color);else if(r.color!=null&&r.keep)m.color.multiply(new THREE.Color(r.color));
+      if(r.rough!=null)m.roughness=r.rough;if(r.metal!=null)m.metalness=r.metal;if(r.env!=null)m.envMapIntensity=r.env;
+      apply(m,r.tex,r.scale||.5,{normal:r.normal,mix:r.mix,rough:r.roughMap,keep:!!r.keep});n++}});
+  return n}
+/* rounded box: vertices pushed onto an inner box offset by radius → smooth bevelled edges with correct normals */
+const RB={};
+function roundedBox(w,h,d,r,seg=3){const k=[w,h,d,r,seg].map(v=>v.toFixed(3)).join();if(RB[k])return RB[k];
+  const N=seg*2+1,g=new THREE.BoxGeometry(w,h,d,N,N,N),p=g.attributes.position,n=g.attributes.normal,v=new THREE.Vector3(),c=new THREE.Vector3(),o=new THREE.Vector3(),hw=w/2-r,hh=h/2-r,hd=d/2-r;
+  /* grid index → coordinate with all segments packed inside the bevel band */
+  const remap=(x,L)=>{const i=Math.round((x+L/2)/L*N);return i<=seg?-L/2+r*(i/seg):L/2-r*((N-i)/seg)};
+  for(let i=0;i<p.count;i++){v.fromBufferAttribute(p,i);v.set(remap(v.x,w),remap(v.y,h),remap(v.z,d));
+    c.set(THREE.MathUtils.clamp(v.x,-hw,hw),THREE.MathUtils.clamp(v.y,-hh,hh),THREE.MathUtils.clamp(v.z,-hd,hd));
+    o.copy(v).sub(c);if(o.lengthSq()<1e-12)o.fromBufferAttribute(n,i);o.normalize();
+    p.setXYZ(i,c.x+o.x*r,c.y+o.y*r,c.z+o.z*r);n.setXYZ(i,o.x,o.y,o.z)}
+  p.needsUpdate=n.needsUpdate=true;g.computeBoundingSphere();g.computeBoundingBox();RB[k]=g;return g}
+/* rounded cylinder (lathe) for seats, pucks, lids */
+function roundedCyl(rt,rb,h,r,seg=24){const k='c'+[rt,rb,h,r,seg].map(v=>v.toFixed(3)).join();if(RB[k])return RB[k];const pts=[],q=4;
+  pts.push(new THREE.Vector2(0,-h/2));for(let i=0;i<=q;i++){const a=-Math.PI/2+i/q*Math.PI/2;pts.push(new THREE.Vector2(rb-r+Math.cos(a)*r,-h/2+r+Math.sin(a)*r))}
+  for(let i=0;i<=q;i++){const a=i/q*Math.PI/2;pts.push(new THREE.Vector2(rt-r+Math.cos(a)*r,h/2-r+Math.sin(a)*r))}pts.push(new THREE.Vector2(0,h/2));
+  const g=new THREE.LatheGeometry(pts,seg);g.computeVertexNormals();RB[k]=g;return g}
+/* bevel(root): swap sharp BoxGeometry / short CylinderGeometry for rounded versions (keeps materials, transforms) */
+function bevel(root,o={}){let n=0;const skip=o.skip||(()=>false);
+  root.traverse(m=>{if(!m.isMesh||m.isInstancedMesh||skip(m)||m.userData.noBevel)return;const g=m.geometry,P=g.parameters;if(!P)return;
+    if(g.type==="BoxGeometry"){const mn=Math.min(P.width,P.height,P.depth);if(mn<.012)return;const r=Math.min(o.r||.022,mn*.32);m.geometry=roundedBox(P.width,P.height,P.depth,r);n++}
+    else if(g.type==="CylinderGeometry"&&!P.openEnded&&P.height<Math.max(P.radiusTop,P.radiusBottom)*1.2&&Math.min(P.radiusTop,P.radiusBottom)>.03){const r=Math.min(o.rc||.02,P.height*.35,Math.min(P.radiusTop,P.radiusBottom)*.3);m.geometry=roundedCyl(P.radiusTop,P.radiusBottom,P.height,r,Math.max(P.radialSegments,24));n++}});
+  return n}
+/* soft contact shadow under objects (fake ambient occlusion on the floor) */
+let cTex=null;
+function contactTex(){if(cTex)return cTex;const c=document.createElement('canvas');c.width=c.height=128;const x=c.getContext('2d');const g=x.createRadialGradient(64,64,10,64,64,64);g.addColorStop(0,'rgba(0,0,0,.9)');g.addColorStop(.55,'rgba(0,0,0,.45)');g.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=g;x.fillRect(0,0,128,128);cTex=new THREE.CanvasTexture(c);return cTex}
+function contact(w,d,op=.38){const m=new THREE.Mesh(new THREE.PlaneGeometry(w,d),new THREE.MeshBasicMaterial({map:contactTex(),transparent:true,opacity:op,depthWrite:false,color:0x1a120a}));m.rotation.x=-Math.PI/2;m.position.y=.006;m.renderOrder=1;m.userData.noPbr=true;return m}
+function tune(renderer){renderer.shadowMap.enabled=!LITE;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.outputEncoding=THREE.sRGBEncoding;return renderer}
+window.PBR={set,apply,mat,dress,bevel,roundedBox,roundedCyl,contact,roomEnv,skyEnv,tune,LITE,cache};
+})();
+
+/*/PBR*/</script>
 <script>
 "use strict";
 /* ============================================================
@@ -361,8 +467,25 @@ function detail(m,tex,scale,k){if(!tex||m.userData.detail)return;m.userData.deta
     sh.fragmentShader='uniform sampler2D dTex;uniform float dS;uniform float dK;uniform vec3 dN;varying vec3 vWP;varying vec3 vWN;\n'+sh.fragmentShader.replace('#include <map_fragment>','#include <map_fragment>\nvec3 bw=pow(abs(vWN),vec3(4.));bw/=(bw.x+bw.y+bw.z);vec3 dc=texture2D(dTex,vWP.zy*dS).rgb*bw.x+texture2D(dTex,vWP.xz*dS).rgb*bw.y+texture2D(dTex,vWP.xy*dS).rgb*bw.z;diffuseColor.rgb*=mix(vec3(1.),dc*dN,dK);')};
   m.needsUpdate=true}
 const DETAIL=[[/^Hyk_(Sand|SandDark|Track|Path)/,'sand',.22,.85],[/^Hyk_MudBrick/,'brick',.3,.9],[/^(H\d_Wall|Cream)/,'plaster',.28,.7],[/^H\d_Floor[AB]/,'floor',.5,.75],[/^H\d_Plinth/,'floor',.4,.5]];
-function dress(root){root.traverse(o=>{if(!o.isMesh)return;(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>{if(!m.isMeshStandardMaterial)return;
-  if(m.metalness>.5||/^Gold/.test(m.name)){m.metalness=.9;m.roughness=.3;m.envMapIntensity=1.3}else m.envMapIntensity=.4;
+/* name → PBR set [regex, texture, world scale, roughness, envIntensity, normal strength] (realism pass) */
+const PBRN=[[/^H\d_Floor[AB]/,'marble_white',.42,.2,.95,.3],[/^H\d_Plinth|^Granite/,'rock_grey',.9,.35,.7,.6],[/^(H\d_Wall|Cream)$/,'plaster_cream',.38,.9,.35,1],
+  [/^SandStone/,'sandstone',.5,.85,.35,1.2],[/^(EgyptRed|EgyptGreen|Lapis|H\d_Accent)$/,'plaster_cream',.5,.75,.4,.8],[/^DarkStone/,'stone_dark',.8,.4,.6,.6],
+  [/^DoorWood/,'wood_oak',1.4,.55,.45,1],[/^(Gold|ExitGold|Chr_Iron)/,'metal_brushed',2,.3,1.3,.4],[/^(Terracotta|Chr_Clay)/,'concrete_light',2.2,.88,.3,1.2],
+  [/^PalmTrunk/,'bark',2.2,.9,.25,1.2],[/^Hyk_(Sand|SandDark|Path|Track)$/,'sand_dunes',.22,.95,.2,1.4],[/^Hyk_MudBrick/,'mudbrick',.55,.92,.25,1.6],
+  [/^Hyk_Rock/,'rock_grey',.7,.85,.3,1.4],[/^Hyk_Grass/,'moss_grass',.6,.95,.2,1],[/^(Hyk_TentCloth|Chr_Sack)/,'canvas',1.6,.95,.2,1],[/^RopeRed/,'fabric',3,.95,.2,1]];
+function dress(root){root.traverse(o=>{if(!o.isMesh)return;(Array.isArray(o.material)?o.material:[o.material]).forEach((m,mi)=>{if(!m.isMeshStandardMaterial)return;
+  if(!m.userData.dressed){m.userData.dressed=1;if(m.metalness>.5||/^Gold/.test(m.name)){m.metalness=.9;m.roughness=.3;m.envMapIntensity=1.3}else m.envMapIntensity=.4}
+  /* carpets: low, upward-facing triangles of Lapis/accent meshes become a second geometry group with woven fabric */
+  if(window.PBR&&/^(Lapis|H\d_Accent)$/.test(m.name)&&!Array.isArray(o.material)&&o.geometry&&o.geometry.index&&!o.userData.carpet){o.userData.carpet=1;
+    const g=o.geometry,ix=g.index.array,pa=g.attributes.position,v=[new THREE.Vector3(),new THREE.Vector3(),new THREE.Vector3()],e1=new THREE.Vector3(),e2=new THREE.Vector3(),mw=o.matrixWorld;o.updateMatrixWorld(true);
+    const keep=[],rug=[];for(let t=0;t<ix.length;t+=3){for(let k=0;k<3;k++)v[k].fromBufferAttribute(pa,ix[t+k]).applyMatrix4(mw);
+      e1.subVectors(v[1],v[0]);e2.subVectors(v[2],v[0]);const nY=e1.cross(e2).normalize().y;const low=Math.max(v[0].y,v[1].y,v[2].y)<.12;
+      (low&&nY>.9?rug:keep).push(ix[t],ix[t+1],ix[t+2])}
+    if(rug.length){const all=keep.concat(rug),I=(ix instanceof Uint32Array||all.length>65000)?Uint32Array:Uint16Array;g.setIndex(new THREE.BufferAttribute(new I(all),1));g.clearGroups();g.addGroup(0,keep.length,0);g.addGroup(keep.length,rug.length,1);
+      const c=m.clone();c.name=m.name+"_Carpet";c.roughness=.96;c.envMapIntensity=.15;c.userData.dressed=1;PBR.apply(c,'fabric',2.6,{normal:1.5});o.material=[m,c]}}
+  if(m.userData.pbr||m.userData.detail)return;
+  const r=window.PBR&&PBRN.find(r=>r[0].test(m.name));
+  if(r){m.roughness=r[3];m.envMapIntensity=r[4];PBR.apply(m,r[1],r[2],{normal:r[5]});m.userData.detail=true;return}
   for(const d of DETAIL)if(d[0].test(m.name))detail(m,TEX[d[1]],d[2],d[3])})})}
 const DUST=[];let dustI=0;
 function dustInit(parent){const tex=glowTex;for(let i=0;i<36;i++){const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,color:0xe6c48a,transparent:true,opacity:0,depthWrite:false}));sp.visible=false;parent.add(sp);DUST.push({sp,life:0})}}
