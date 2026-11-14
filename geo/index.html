@@ -1127,10 +1127,10 @@ function plant(g,arch,list,barkM,leafM,shadow=true){const ib=new THREE.Instanced
 /* ---------- public builders ---------- */
 let RA=null,CA=null;
 function rainforest(g,list){if(!RA)RA=[rainArch(11,{fins:true,lianas:true}),rainArch(23,{lianas:true}),rainArch(37,{fins:true,nf:4,hb:.06,db:.05}),rainArch(51,{top:.7,reach:.16,lianas:true})];
-  const bm=barkMat(0xffffff,'bark',1.6),lm=foliageMat(leafTropical()),groups=[[],[],[],[]];list.forEach((t,i)=>groups[i%4].push(t));
+  const bm=barkMat(0xffffff,'bark_tropical',.9),lm=foliageMat(leafTropical()),groups=[[],[],[],[]];list.forEach((t,i)=>groups[i%4].push(t));
   groups.forEach((L,k)=>{if(L.length)plant(g,RA[k],L,bm,lm)})}
 function kapok(g,x,y,z){const A=rainArch(777,{fins:true,nf:7,hb:.16,db:.14,rb:.058,top:.66,reach:.36,nl:7,cs:1.5,lianas:true}),H=27;
-  const b=new THREE.Mesh(A.bark,barkMat(0xffffff,'bark',1.1)),l=new THREE.Mesh(A.leaf,foliageMat(leafTropical()));for(const m of[b,l]){m.scale.setScalar(H);m.position.set(x,y-.15,z);m.castShadow=m.receiveShadow=true;g.add(m)}l.customDepthMaterial=l.material.userData.depth}
+  const b=new THREE.Mesh(A.bark,barkMat(0xffffff,'bark_tropical',.5)),l=new THREE.Mesh(A.leaf,foliageMat(leafTropical()));for(const m of[b,l]){m.scale.setScalar(H);m.position.set(x,y-.15,z);m.castShadow=m.receiveShadow=true;g.add(m)}l.customDepthMaterial=l.material.userData.depth}
 function conifers(g,list){if(!CA)CA=[coniferArch(5,{droop:.11}),coniferArch(17,{whorls:10,droop:.07}),coniferArch(29,{droop:.13})];
   const bm=barkMat(0xffffff,'bark',2.6),lm=foliageMat(conifer(),0x93b3a4),groups=[[],[],[]];list.forEach((t,i)=>groups[i%3].push(t));groups.forEach((L,k)=>{if(L.length)plant(g,CA[k],L,bm,lm)})}
 /* date palm (replaces palm(r)) */
@@ -1151,7 +1151,7 @@ function bigLeafPlant(g,x,y,z){const R=rnd(91),parts=[],leaves=[];
     for(let k=0;k<p.count;k++){const u=p.getX(k)/bw*2,v=p.getY(k)/bl+.5;p.setZ(k,Math.abs(u)*.12-v*v*.32)}pg.translate(0,bl/2,0);pg.rotateX(-1.0-R()*.4);pg.rotateY(-a+Math.PI/2);pg.translate(e.x,e.y,e.z);pg.computeVertexNormals();
     const t=.8+R()*.3;leaves.push({g:pg,c:[t*.9,t,t*.85]})}
   const pm=new THREE.Mesh(merge(parts),new THREE.MeshStandardMaterial({vertexColors:true,roughness:.7}));pm.material.userData.noPbr=true;
-  const lm=new THREE.Mesh(merge(leaves),foliageMat(bigLeaf()));lm.material.roughness=.5;lm.material.envMapIntensity=.45;lm.customDepthMaterial=lm.material.userData.depth;
+  const lm=new THREE.Mesh(merge(leaves),foliageMat(bigLeaf()));lm.material.roughness=.45;lm.material.envMapIntensity=.6;lm.material.color.setScalar(1.9);lm.customDepthMaterial=lm.material.userData.depth;
   for(const m of[pm,lm]){m.position.set(x,y,z);m.castShadow=m.receiveShadow=true;g.add(m)}}
 /* ---------- emperor penguin ---------- */
 const PG={};
