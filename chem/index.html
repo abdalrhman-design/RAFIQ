@@ -457,22 +457,25 @@ const VERT_DECL='varying vec3 vPbrP;varying vec3 vPbrN;\n';
 const VERT_BODY='\nvPbrP=(modelMatrix*vec4(transformed,1.)).xyz;vPbrN=normalize(mat3(modelMatrix)*objectNormal);';
 function apply(m,name,scale,o={}){const s=typeof name==="string"?set(name):name;if(!s)return m;
   const keep=o.keep!==false,inv={value:new THREE.Vector3(1,1,1)};if(keep&&s.a){if(s.a.userData.avg)inv.value.copy(s.a.userData.avg);(s.a.userData.users=s.a.userData.users||[]).push(inv)}
-  const u={pInv:inv,pA:{value:s.a},pN:{value:s.n},pR:{value:s.r},pS:{value:scale||.5},pK:{value:o.normal==null?1:o.normal},pMix:{value:o.mix==null?1:o.mix},pRough:{value:o.rough==null?1:o.rough},pOff:{value:new THREE.Vector3(o.ox||0,o.oy||0,o.oz||0)}};
+  const s2=o.slope?set(o.slope.tex):null,inv2={value:new THREE.Vector3(1,1,1)};if(s2&&keep&&s2.a){if(s2.a.userData.avg)inv2.value.copy(s2.a.userData.avg);(s2.a.userData.users=s2.a.userData.users||[]).push(inv2)}
+  const u={pInv:inv,pInv2:inv2,pA2:{value:s2?s2.a:null},pN2:{value:s2?s2.n:null},pS2:{value:o.slope?o.slope.scale||scale:1},pSl:{value:new THREE.Vector2(o.slope?o.slope.lo||.72:0,o.slope?o.slope.hi||.86:1)},pA:{value:s.a},pN:{value:s.n},pR:{value:s.r},pS:{value:scale||.5},pK:{value:o.normal==null?1:o.normal},pMix:{value:o.mix==null?1:o.mix},pRough:{value:o.rough==null?1:o.rough},pOff:{value:new THREE.Vector3(o.ox||0,o.oy||0,o.oz||0)}};
   const hasN=!!s.n&&!LITE,hasR=!!s.r&&!LITE;
   m.userData.pbr={name:s.name,u};
-  m.customProgramCacheKey=()=>'pbr'+(hasN?1:0)+(hasR?1:0);
+  const hasS=!!s2;m.customProgramCacheKey=()=>'pbr'+(hasN?1:0)+(hasR?1:0)+(hasS?1:0);
   m.onBeforeCompile=sh=>{Object.assign(sh.uniforms,u);
     sh.vertexShader=VERT_DECL+sh.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>'+VERT_BODY);
-    let f='uniform vec3 pInv;uniform sampler2D pA;uniform sampler2D pN;uniform sampler2D pR;uniform float pS;uniform float pK;uniform float pMix;uniform float pRough;uniform vec3 pOff;varying vec3 vPbrP;varying vec3 vPbrN;\n'+
+    let f=(hasS?'#define PBR_SLOPE\n':'')+'uniform vec3 pInv;uniform vec3 pInv2;uniform sampler2D pA2;uniform sampler2D pN2;uniform float pS2;uniform vec2 pSl;uniform sampler2D pA;uniform sampler2D pN;uniform sampler2D pR;uniform float pS;uniform float pK;uniform float pMix;uniform float pRough;uniform vec3 pOff;varying vec3 vPbrP;varying vec3 vPbrN;\n'+
       'vec3 pbrBW(){vec3 b=pow(abs(normalize(vPbrN)),vec3(8.));return b/(b.x+b.y+b.z);}\n'+
-      'vec4 pbrTri(sampler2D t,vec3 bw){vec3 p=(vPbrP+pOff)*pS;if(bw.x>.985)return texture2D(t,p.zy);if(bw.y>.985)return texture2D(t,p.xz);if(bw.z>.985)return texture2D(t,p.xy);return texture2D(t,p.zy)*bw.x+texture2D(t,p.xz)*bw.y+texture2D(t,p.xy)*bw.z;}\n';
+      'float pbrSlope(){return 1.-smoothstep(pSl.x,pSl.y,normalize(vPbrN).y);}\n'+'vec4 pbrTri2(sampler2D t,vec3 bw){vec3 p=(vPbrP+pOff)*pS2;return texture2D(t,p.zy)*bw.x+texture2D(t,p.xz)*bw.y+texture2D(t,p.xy)*bw.z;}\n'+'vec4 pbrTri(sampler2D t,vec3 bw){vec3 p=(vPbrP+pOff)*pS;if(bw.x>.985)return texture2D(t,p.zy);if(bw.y>.985)return texture2D(t,p.xz);if(bw.z>.985)return texture2D(t,p.xy);return texture2D(t,p.zy)*bw.x+texture2D(t,p.xz)*bw.y+texture2D(t,p.xy)*bw.z;}\n';
     f+=sh.fragmentShader;
-    f=f.replace('#include <map_fragment>','#include <map_fragment>\n{vec3 bw=pbrBW();vec4 tc=pbrTri(pA,bw);tc=sRGBToLinear(tc);diffuseColor.rgb=mix(diffuseColor.rgb,diffuseColor.rgb*min(tc.rgb*pInv,vec3(2.)),pMix);}');
+    f=f.replace('#include <map_fragment>','#include <map_fragment>\n{vec3 bw=pbrBW();vec4 tc=pbrTri(pA,bw);tc=sRGBToLinear(tc);vec3 td=tc.rgb*pInv;\n#ifdef PBR_SLOPE\n{float sw=pbrSlope();if(sw>.001){vec3 t2=sRGBToLinear(pbrTri2(pA2,bw)).rgb*pInv2;td=mix(td,t2,sw);}}\n#endif\ndiffuseColor.rgb=mix(diffuseColor.rgb,diffuseColor.rgb*min(td,vec3(2.)),pMix);}');
     if(hasR)f=f.replace('#include <roughnessmap_fragment>','#include <roughnessmap_fragment>\n{vec3 bw=pbrBW();float rr=pbrTri(pR,bw).g;roughnessFactor=clamp(roughnessFactor*mix(1.,rr*1.6,pRough),.04,1.);}');
     if(hasN)f=f.replace('#include <normal_fragment_maps>','#include <normal_fragment_maps>\n{vec3 bw=pbrBW();vec3 n=normalize(vPbrN);vec3 p=(vPbrP+pOff)*pS;'+
       'vec3 tx=vec3(0.,0.,1.),ty=tx,tz=tx;if(bw.x>.015)tx=texture2D(pN,p.zy).xyz*2.-1.;if(bw.y>.015)ty=texture2D(pN,p.xz).xyz*2.-1.;if(bw.z>.015)tz=texture2D(pN,p.xy).xyz*2.-1.;tx.xy*=pK;ty.xy*=pK;tz.xy*=pK;'+
       'vec3 nx=vec3(tx.xy+n.zy,abs(tx.z)*n.x);vec3 ny=vec3(ty.xy+n.xz,abs(ty.z)*n.y);vec3 nz=vec3(tz.xy+n.xy,abs(tz.z)*n.z);'+
-      'vec3 wn=normalize(nx.zyx*bw.x+ny.xzy*bw.y+nz.xyz*bw.z);normal=normalize((viewMatrix*vec4(wn,0.)).xyz);}');
+      'vec3 wn=normalize(nx.zyx*bw.x+ny.xzy*bw.y+nz.xyz*bw.z);'+
+      '\n#ifdef PBR_SLOPE\n{float sw=pbrSlope();if(sw>.001){vec3 q=(vPbrP+pOff)*pS2;vec3 sx=texture2D(pN2,q.zy).xyz*2.-1.,sy=texture2D(pN2,q.xz).xyz*2.-1.,sz=texture2D(pN2,q.xy).xyz*2.-1.;sx.xy*=pK;sy.xy*=pK;sz.xy*=pK;vec3 w2=normalize(vec3(sx.xy+n.zy,abs(sx.z)*n.x).zyx*bw.x+vec3(sy.xy+n.xz,abs(sy.z)*n.y).xzy*bw.y+vec3(sz.xy+n.xy,abs(sz.z)*n.z)*bw.z);wn=normalize(mix(wn,w2,sw));}}\n#endif\n'+
+      'normal=normalize((viewMatrix*vec4(wn,0.)).xyz);}');
     sh.fragmentShader=f};
   m.needsUpdate=true;return m}
 function mat(name,scale,o={}){const m=new THREE.MeshStandardMaterial(Object.assign({color:o.color==null?0xffffff:o.color,roughness:o.roughness==null?.8:o.roughness,metalness:o.metalness||0,envMapIntensity:o.env==null?.6:o.env},o.extra||{}));return apply(m,name,scale,Object.assign({keep:false},o))}
@@ -542,10 +545,10 @@ const notGlow=m=>!(m.emissive&&m.emissive.getHex()>0)&&!m.transparent;
 const RULES=[
   {when:m=>m.metalness>=.5,tex:"metal_brushed",scale:2.2,keep:true,rough:.32,metal:1,env:1.1,normal:.4},
   {when:H(0x1e2a2c),tex:"stone_dark",scale:.9,color:0xd8d8d8,rough:.28,metal:0,env:.9,normal:.6},
-  {when:any(0x0c8192,0x085e6c),tex:"laminate",scale:1.2,keep:true,rough:.62,env:.38,normal:.5},
-  {when:(m,h)=>h===0xfaeacf&&m.roughness>=.88,tex:"plaster_cream",scale:.4,keep:true,rough:.95,env:.35,normal:1},
+  {when:any(0x0c8192,0x085e6c),tex:"laminate",scale:1.2,keep:true,rough:.62,env:.38,normal:.5,mix:.55},
+  {when:(m,h)=>h===0xfaeacf&&m.roughness>=.88,tex:"plaster_cream",scale:.4,keep:true,rough:.95,env:.35,normal:1,mix:.5},
   {when:H(0xfff8ea),tex:"concrete_light",scale:.3,keep:true,rough:.98,env:.3,normal:.6},
-  {when:any(0xfaeacf,0xf4d9b7,0xfff6e4,0xffffff,0xe8e8e8,0xf0f0f0),tex:"laminate",scale:1.4,keep:true,rough:.58,env:.42,normal:.4},
+  {when:any(0xfaeacf,0xf4d9b7,0xfff6e4,0xffffff,0xe8e8e8,0xf0f0f0),tex:"laminate",scale:1.4,keep:true,rough:.58,env:.42,normal:.4,mix:.55},
   {when:H(0x2e2014),tex:"wood_oak",scale:1.6,color:0x6e4a2c,rough:.55,env:.5,normal:1},
   {when:any(0xd9b77a),tex:"wood_oak",scale:1.3,color:0xffecd2,rough:.6,env:.45,normal:1},
   {when:H(0xb4683a),tex:"concrete_light",scale:2.5,keep:true,rough:.88,env:.3,normal:1.2},
