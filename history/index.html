@@ -473,7 +473,7 @@ const PBRN=[[/^H\d_Floor[AB]/,'marble_white',.42,.2,.95,.3],[/^H\d_Plinth|^Grani
   [/^DoorWood/,'wood_oak',1.4,.55,.45,1],[/^(Gold|ExitGold|Chr_Iron)/,'metal_brushed',2,.3,1.3,.4],[/^(Terracotta|Chr_Clay)/,'concrete_light',2.2,.88,.3,1.2],
   [/^PalmTrunk/,'bark',2.2,.9,.25,1.2],[/^Hyk_(Sand|SandDark|Path|Track)$/,'sand_dunes',.22,.95,.2,1.4],[/^Hyk_MudBrick/,'mudbrick',.55,.92,.25,1.6],
   [/^Hyk_Rock/,'rock_grey',.7,.85,.3,1.4],[/^Hyk_Grass/,'moss_grass',.6,.95,.2,1],[/^(Hyk_TentCloth|Chr_Sack)/,'canvas',1.6,.95,.2,1],[/^RopeRed/,'fabric',3,.95,.2,1],
-  [/^Cloth_(Wool|Headband|Red)/,'fabric',9,.95,.25,.9],[/^Leather_Brown/,'canvas',6,.75,.35,1.2],[/^Hair_Black/,'hair_strands',9,.72,.35,1.6],[/^Bronze/,'metal_brushed',6,.32,1.2,.4],[/^Wood_Shaft|^Bow_Horn/,'wood_oak',5,.7,.3,.8],[/^Shield_Hide/,'canvas',3,.85,.3,1.1]];
+  [/^Cloth_(Wool|Headband|Red)/,'fabric',9,.95,.25,.9],[/^Leather_Brown/,'canvas',6,.75,.35,1.2],[/^Hair_Black/,'hair_strands',9,.72,.35,1.6],[/^Bronze/,'metal_brushed',6,.32,1.2,.4],[/^Wood_Shaft|^Bow_Horn/,'wood_oak',5,.7,.3,.8],[/^Shield_Hide/,'canvas',3,.85,.3,1.1],[/^Horse_Coat/,'hair_strands',20,.55,.35,.5],[/^Horse_Mane/,'hair_strands',8,.7,.3,1.5],[/^(Tack_Red|Plume_Red)/,'fabric',8,.85,.25,.9]];
 function dress(root){root.traverse(o=>{if(!o.isMesh)return;(Array.isArray(o.material)?o.material:[o.material]).forEach((m,mi)=>{if(!m.isMeshStandardMaterial)return;
   if(!m.userData.dressed){m.userData.dressed=1;if(m.metalness>.5||/^Gold/.test(m.name)){m.metalness=.9;m.roughness=.3;m.envMapIntensity=1.3}else m.envMapIntensity=.4}
   /* carpets: low, upward-facing triangles of Lapis/accent meshes become a second geometry group with woven fabric */
