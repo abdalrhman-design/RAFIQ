@@ -242,7 +242,7 @@ function measure(t){try{const im=t.image,c=document.createElement('canvas');c.wi
 function tex(url,srgb){const t=loader.load(url,()=>{t.needsUpdate=true;if(srgb)measure(t)},undefined,()=>{t.userData.missing=true});t.userData=t.userData||{};t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=LITE?4:8;if(srgb)t.encoding=THREE.sRGBEncoding;t.flipY=false;return t}
 function set(name){if(cache[name])return cache[name];const s={name,a:tex(BASE+name+"_a.webp",true),n:LITE?null:tex(BASE+name+"_n.webp",false),r:LITE?null:tex(BASE+name+"_r.webp",false)};cache[name]=s;return s}
 const VERT_DECL='varying vec3 vPbrP;varying vec3 vPbrN;\n';
-const VERT_BODY='\nvPbrP=(modelMatrix*vec4(transformed,1.)).xyz;vPbrN=normalize(mat3(modelMatrix)*objectNormal);';
+const VERT_BODY='\nvec4 pbrW=vec4(transformed,1.);vec3 pbrN0=objectNormal;\n#ifdef USE_INSTANCING\npbrW=instanceMatrix*pbrW;pbrN0=mat3(instanceMatrix)*pbrN0;\n#endif\nvPbrP=(modelMatrix*pbrW).xyz;vPbrN=normalize(mat3(modelMatrix)*pbrN0);';
 function apply(m,name,scale,o={}){const s=typeof name==="string"?set(name):name;if(!s)return m;
   const keep=o.keep!==false,inv={value:new THREE.Vector3(1,1,1)};if(keep&&s.a){if(s.a.userData.avg)inv.value.copy(s.a.userData.avg);(s.a.userData.users=s.a.userData.users||[]).push(inv)}
   const s2=o.slope?set(o.slope.tex):null,inv2={value:new THREE.Vector3(1,1,1)};if(s2&&keep&&s2.a){if(s2.a.userData.avg)inv2.value.copy(s2.a.userData.avg);(s2.a.userData.users=s2.a.userData.users||[]).push(inv2)}
@@ -471,7 +471,7 @@ const DETAIL=[[/^Hyk_(Sand|SandDark|Track|Path)/,'sand',.22,.85],[/^Hyk_MudBrick
 const PBRN=[[/^H\d_Floor[AB]/,'marble_white',.42,.2,.95,.3],[/^H\d_Plinth|^Granite/,'rock_grey',.9,.35,.7,.6],[/^(H\d_Wall|Cream)$/,'plaster_cream',.38,.9,.35,1],
   [/^SandStone/,'sandstone',.5,.85,.35,1.2],[/^(EgyptRed|EgyptGreen|Lapis|H\d_Accent)$/,'plaster_cream',.5,.75,.4,.8],[/^DarkStone/,'stone_dark',.8,.4,.6,.6],
   [/^DoorWood/,'wood_oak',1.4,.55,.45,1],[/^(Gold|ExitGold|Chr_Iron)/,'metal_brushed',2,.3,1.3,.4],[/^(Terracotta|Chr_Clay)/,'concrete_light',2.2,.88,.3,1.2],
-  [/^PalmTrunk/,'bark',2.2,.9,.25,1.2],[/^Hyk_(Sand|SandDark|Path|Track)$/,'sand_dunes',.22,.95,.2,1.4],[/^Hyk_MudBrick/,'mudbrick',.55,.92,.25,1.6],
+  [/^PalmTrunk/,'bark',2.2,.9,.25,1.2],[/^Hyk_(Sand|SandDark)$/,'sand_dunes',.12,.95,.2,1.1],[/^Hyk_(Path|Track)$/,'dry_mud',.4,.95,.2,1.2],[/^Hyk_MudBrick/,'mudbrick',1.05,.92,.25,1.6],
   [/^Hyk_Rock/,'rock_grey',.7,.85,.3,1.4],[/^Hyk_Grass/,'moss_grass',.6,.95,.2,1],[/^(Hyk_TentCloth|Chr_Sack)/,'canvas',1.6,.95,.2,1],[/^RopeRed/,'fabric',3,.95,.2,1],
   [/^Cloth_(Wool|Headband|Red)/,'fabric',9,.95,.25,.9],[/^Leather_Brown/,'canvas',6,.75,.35,1.2],[/^Hair_Black/,'hair_strands',9,.72,.35,1.6],[/^Bronze/,'metal_brushed',6,.32,1.2,.4],[/^Wood_Shaft|^Bow_Horn/,'wood_oak',5,.7,.3,.8],[/^Shield_Hide/,'canvas',3,.85,.3,1.1],[/^Horse_Coat/,'hair_strands',20,.55,.35,.5],[/^Horse_Mane/,'hair_strands',8,.7,.3,1.5],[/^(Tack_Red|Plume_Red)/,'fabric',8,.85,.25,.9]];
 function dress(root){root.traverse(o=>{if(!o.isMesh)return;(Array.isArray(o.material)?o.material:[o.material]).forEach((m,mi)=>{if(!m.isMeshStandardMaterial)return;

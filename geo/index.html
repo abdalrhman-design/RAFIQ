@@ -529,6 +529,16 @@ function penguin(){const g=new THREE.Group(),bk=mat(0x20242c,{roughness:.55}),wh
   const b=new THREE.Mesh(new THREE.ConeGeometry(.032,.13,8),or);b.rotation.x=Math.PI/2;b.position.set(0,.71,.18);body.add(b);
   const fl=E(.035,.2,.09,bk,-.215,.4,0),fr=E(.035,.2,.09,bk,.215,.4,0);fl.rotation.z=-.22;fr.rotation.z=.22;body.add(fl,fr);
   g.add(body,E(.07,.025,.1,or,-.08,.025,.05),E(.07,.025,.1,or,.08,.025,.05));g.userData={body,fl,fr};g.scale.setScalar(1.25);return g}
+const CARDT={};function cardTex(n){if(CARDT[n])return CARDT[n];const C=(window.__CARDS||{})[n];if(!C)return null;const img=new Image(),t=new THREE.Texture(img);img.onload=()=>{t.needsUpdate=true};img.src=C.src;t.encoding=THREE.sRGBEncoding;t.anisotropy=4;t._asp=C.w/C.h;CARDT[n]=t;return t}
+function cardGeo(asp,n=3){const P=[],N=[],U=[],I=[];for(let k=0;k<n;k++){const a=k*Math.PI/n,c=Math.cos(a),s=Math.sin(a),b=P.length/3;
+  for(const[u,v]of[[0,0],[1,0],[1,1],[0,1]]){const x=(u-.5)*asp;P.push(x*c,v,-x*s);N.push(-s*.35,1,-c*.35);U.push(u,v)}I.push(b,b+1,b+2,b,b+2,b+3)}
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(P,3));const nn=new THREE.Float32BufferAttribute(N,3);g.setAttribute('normal',nn);g.normalizeNormals();g.setAttribute('uv',new THREE.Float32BufferAttribute(U,2));g.setIndex(I);return g}
+function cards(g,name,list,shadow=false){const t=cardTex(name);if(!t||!list.length)return null;const m=new THREE.MeshStandardMaterial({map:t,alphaTest:.42,side:THREE.DoubleSide,roughness:.92,metalness:0,envMapIntensity:.35});m.userData.noPbr=true;
+  const im=inst(cardGeo(t._asp),m,list,shadow);if(shadow){im.customDepthMaterial=new THREE.MeshDepthMaterial({depthPacking:THREE.RGBADepthPacking,map:t,alphaTest:.42})}g.add(im);return im}
+function glbPart(asset,name){const A=ASSETS[asset];if(!A)return null;let f=null;A.scene.traverse(o=>{if(!f&&o.isMesh&&(o.name===name||(o.parent&&o.parent.name===name)))f=o});return f}
+function addRocks(g,list,ids,tint){const parts=ids.map(i=>glbPart('rocks','Rock'+i)).filter(Boolean);if(!parts.length)return false;
+  parts.forEach((pm,k)=>{const L=list.filter((_,i)=>i%parts.length===k).map(t=>[t[0],t[1]-.08*t[3],t[2],t[3]*1.55,t[4],(t[5]||0)*.15,0,t[3]*1.55*(.75+((t[4]*7)%1)*.5)]);
+    const m=pm.material.clone();m.aoMap=null;m.metalnessMap=null;m.roughnessMap=null;m.color.set(tint);m.roughness=.92;m.metalness=0;m.envMapIntensity=.4;m.userData.noPbr=true;const im=inst(pm.geometry,m,L,true);im.receiveShadow=true;g.add(im)});return true}
 function gProp(name,sc=1){const A=ASSETS[name];if(!A)return null;const root=A.scene.clone(true),g=new THREE.Group();g.add(root);root.scale.setScalar(sc);
   root.traverse(o=>{if(!o.isMesh)return;o.castShadow=true;o.receiveShadow=true;const m=o.material=o.material.clone();m.userData.noPbr=true;
     if(m.metalness>.5){m.map=null;m.color.set(0xa4a9ac);m.metalness=.85;m.envMapIntensity=1.3;m.roughness=Math.min(Math.max(m.roughness,.12),.35)}else m.envMapIntensity=.45;if(m.transparent){m.depthWrite=false;m.envMapIntensity=1.4}});return g}
@@ -616,7 +626,7 @@ const WORLDS=[
  sky:[0x7f9c98,0xc4d3c2,0x3a5a40,[.9,.95,.85],[.2,.9,-.3]],env:[0x8aa89a,0xb0c8a8,0x2f4a30],fog:[0x9bb8a2,16,120],hemi:[0xe8ffe8,0x2a4a2a,.5],sun:[0xf0ffe0,1.0,[6,24,-6]],wx:"rain",
  spawn:[-2,31],
  h(x,z){const dr=Math.abs(x-rxF(z));return(fbm(x*.035,z*.035+11)-.45)*2.2*ss(2,7,dr)-1.75*(1-ss(1.5,5.5,dr))+ss(50,95,Math.hypot(x,z))*8*fbm(x*.02,z*.02)},
- color(x,z,h,ny,c){const dr=Math.abs(x-rxF(z));mixc(c,0x35552a,0x587a38,fbm(x*.15,z*.15)*1.3-.1);c.lerp(cB.set(0x6b5a3a),(1-ss(3.5,7,dr))*.8)},
+ color(x,z,h,ny,c){const dr=Math.abs(x-rxF(z)),n=fbm(x*.15,z*.15);mixc(c,0x5a4630,0x7a6244,n*1.2-.1);c.lerp(cB.set(0x4f6a30),ss(.55,.8,fbm(x*.07+9,z*.07))*.55);c.lerp(cB.set(0x5d4c36),(1-ss(3.5,7,dr))*.8)},
  walk(x,z){return Math.abs(x-rxF(z))>3.6},
  clues:[
   {x:-5,z:14,say:"المطر لا يتوقّف، والجوّ حارّ ورطب! هل الطقس هنا هكذا دائمًا؟",fact:"المناخ الاستوائي حارّ ممطر طوال السنة، لأن المنطقة قريبة من خط الاستواء حيث تسقط أشعة الشمس شبه عمودية، وتزيد أمطاره غالبًا على 2000 ملّيمتر في السنة."},
@@ -649,7 +659,7 @@ const WORLDS=[
  spawn:[0,31],
  h(x,z){const t=clamp((34-z)/68,0,1),base=10*t*t*(3-2*t),dx=Math.abs(x-pxM(z));
    return base+Math.pow(ss(5,34,dx),1.25)*22*(.55+.9*fbm(x*.03,z*.03+2))+(fbm(x*.09,z*.09)-.5)*1.2*ss(3,9,dx)+ss(38,105,Math.hypot(x,z))*46*(.35+fbm(x*.016+9,z*.016)*1.25)},
- color(x,z,h,ny,c){const n=fbm(x*.08,z*.08);mixc(c,0x5f8f42,0x86a850,n*1.4-.2);if(ny<.86||h>11)c.lerp(cB.set(0x857b70),clamp(ss(.9,.7,ny)+ss(10,15,h),0,1));if(h>15+n*5&&ny>.55)c.lerp(cB.set(0xf5f9fd),ss(15+n*5,19+n*5,h))},
+ color(x,z,h,ny,c){const n=fbm(x*.08,z*.08);mixc(c,0x55703a,0x7d8c4c,n*1.4-.2);c.lerp(cB.set(0x7a6a4c),ss(.58,.82,fbm(x*.11+3,z*.11))*.5);if(ny<.86||h>11)c.lerp(cB.set(0x857b70),clamp(ss(.9,.7,ny)+ss(10,15,h),0,1));if(h>15+n*5&&ny>.55)c.lerp(cB.set(0xf5f9fd),ss(15+n*5,19+n*5,h))},
  walk(x,z){return Math.abs(x-pxM(z))<8.2&&z>-33},
  clues:[
   {x:-1.2,z:21,say:"كلما صعدنا شعرتُ ببرد أكثر، مع أن الشمس ساطعة! لماذا تبرد الأرض كلما ارتفعت؟",fact:"تنخفض درجة الحرارة كلما ارتفعنا عن سطح البحر، بمعدّل نحو 6 درجات ونصف لكل ألف متر."},
@@ -675,9 +685,10 @@ desert(W,g){const r=rng(11),H=W.h;W.col=[{x:12,z:-15,r:5.1},{x:-14,z:-12,r:2.6}]
   const th=thermo(true);th.position.set(-11.6,H(-11.6,-9.8),-9.8);g.add(th);
   for(const[x,z,ry]of[[8.6,-6.6,2.2],[17.2,-8.2,-.7]]){const c=camel();c.position.set(x,H(x,z),z);c.rotation.y=ry;g.add(c);W.col.push({x,z,r:1.3});W.anim.push(t=>{c.userData.head.rotation.x=Math.sin(t*1.3+x)*.08})}
   const rk=scatter(21,46,80,(x,z)=>Math.hypot(x-12,z+15)>7&&Math.hypot(x,z-31)>4).map(p=>[p[0],H(p[0],p[1])+.05,p[1],.25+p[2]*.7,p[3]*6,p[2]*3,0,.2+p[3]*.4]);
-  g.add(inst(rockGeo(),flat(mat(0xa9865a)),rk));
+  if(!addRocks(g,rk,[3],0xfff0dc))g.add(inst(rockGeo(),flat(mat(0xa9865a)),rk));
   const sh=scatter(22,70,70,(x,z)=>Math.hypot(x,z-31)>4).map(p=>[p[0],H(p[0],p[1])+.1,p[1],.22+p[2]*.3,p[3]*6,0,0,.14+p[3]*.2]);
-  g.add(inst(new THREE.IcosahedronGeometry(1,1),flat(mat(0x7a7a3e)),sh));
+  if(!cards(g,'desert_shrub',sh.map(t=>[t[0],t[1]-.12,t[2],t[3]*2.4,t[4]]),true))g.add(inst(new THREE.IcosahedronGeometry(1,1),flat(mat(0x7a7a3e)),sh));
+  cards(g,'desert_grass',scatter(24,110,75,(x,z)=>Math.hypot(x,z-31)>4&&Math.hypot(x-12,z+15)>6.5).map(p=>[p[0],H(p[0],p[1])-.03,p[1],.45+p[2]*.45,p[3]*6]));
   const gr=scatter(23,60,9,(x,z)=>Math.hypot(x,z)>5.2).map(p=>[12+p[0],H(12+p[0],-15+p[1])+.1,-15+p[1],.25+p[2]*.25,p[3]*6,0,0,.3+p[3]*.3]);
   g.add(inst(new THREE.ConeGeometry(.6,1,5),mat(0x5f9a3e),gr));
   const sg=glow(0xfff2c0,60,.9);sg.position.set(95,150,-105);g.add(sg)},
@@ -693,7 +704,8 @@ forest(W,g){const r=rng(31),H=W.h;W.col=[];
   const fern=scatter(33,LITE?260:520,60,(x,z)=>Math.abs(x-rxF(z))>4.2&&Math.hypot(x-W.spawn[0],z-W.spawn[1])>3).map(p=>[p[0],H(p[0],p[1])+.25,p[1],.5+p[2]*.7,p[3]*6,0,0,.35+p[2]*.5]);
   g.add(inst(new THREE.ConeGeometry(1,1.4,6),flat(mat(0x4c9a3a)),fern,false));
   const fl=scatter(34,90,50,(x,z)=>Math.abs(x-rxF(z))>4.2).map(p=>[p[0],H(p[0],p[1])+.5,p[1],.12+p[2]*.1,0]);
-  const fm=inst(new THREE.IcosahedronGeometry(1,0),mat(0xffffff,{emissive:0x331111}),fl,false),cc=new THREE.Color(),pal=[0xff5a7a,0xffc23a,0xff7a2e,0xd24ae0,0xffffff];fl.forEach((_,i)=>fm.setColorAt(i,cc.set(pal[i%5]).convertSRGBToLinear()));g.add(fm);
+  if(!cards(g,'heliconia',fl.map(t=>[t[0],t[1]-.5,t[2],1.1+t[3]*4,t[4]+((t[0]*13)%6)]),true)){const fm=inst(new THREE.IcosahedronGeometry(1,0),mat(0xffffff,{emissive:0x331111}),fl,false),cc=new THREE.Color(),pal=[0xff5a7a,0xffc23a,0xff7a2e,0xd24ae0,0xffffff];fl.forEach((_,i)=>fm.setColorAt(i,cc.set(pal[i%5]).convertSRGBToLinear()));g.add(fm);}
+  cards(g,'orchid',scatter(35,26,40,(x,z)=>Math.abs(x-rxF(z))>4.5).map(p=>[p[0],H(p[0],p[1])-.02,p[1],.45+p[2]*.3,p[3]*6]));
   FLORA.bigLeafPlant(g,-6.6,H(-6.6,15.6)-.05,15.6);
   const RG=gProp('p_rain',1.25);if(RG){RG.position.set(-3.4,H(-3.4,14.6),14.6);RG.rotation.y=.6;g.add(RG)}else{const gauge=new THREE.Group();gauge.add(C(.05,.06,1.2,mat(0x8a5a2b),0,.6,0),C(.16,.16,.5,mat(0xcfefff,{transparent:true,opacity:.5,roughness:.1}),0,1.45,0,14),C(.14,.14,.3,mat(0x3f8fd0,{roughness:.2}),0,1.36,0,14),C(.26,.16,.14,mat(0xdddddd,{roughness:.3}),0,1.76,0,14));gauge.position.set(-3.4,H(-3.4,14.6),14.6);g.add(gauge);}
   const CN=gProp('p_canoe',.9);if(CN){CN.position.set(6.4,-.93,-17.5);CN.rotation.y=.3+Math.PI/2;g.add(CN);W.anim.push(t=>{CN.position.y=-.93+Math.sin(t*1.1)*.025;CN.rotation.z=Math.sin(t*.9)*.02})}else{const canoe=E(.5,.22,2.3,mat(0x7a4a26),0,0,0);canoe.position.set(6.4,-.72,-17.5);canoe.rotation.y=.3;g.add(canoe,E(.36,.1,2.0,mat(0x3a2414),6.4,-.6,-17.5));}
@@ -703,7 +715,7 @@ forest(W,g){const r=rng(31),H=W.h;W.col=[];
 polar(W,g){const r=rng(51),H=W.h;W.col=[];
   const sea=water(520,-.95,0x1c4c70,.93);g.add(sea);
   const ice=flat(mat(0xd8eefa,{roughness:.35}));const bergs=[];for(let i=0;i<12;i++){const x=-70+i*12.5+r()*6,z=-34-r()*70;bergs.push([x,-.2+r()*.8,z,3+r()*6,r()*6,r()*.3,r()*.3,2+r()*5])}
-  g.add(inst(new THREE.IcosahedronGeometry(1,0),ice,bergs));
+  {const BG=[0,1,2].map(i=>glbPart('bergs','Berg'+i));if(BG[0]){BG.forEach((pm,k)=>{const L=bergs.filter((_,i)=>i%3===k).map(t=>[t[0],-1.25,t[2],t[3]*.85,t[4],0,0,t[3]*(k===0?.75:1.05)]);const m=pm.material.clone();m.roughness=.32;m.metalness=0;m.envMapIntensity=1.1;m.color.set(0xf4fbff);m.userData.noPbr=true;g.add(inst(pm.geometry,m,L,true))})}else g.add(inst(new THREE.IcosahedronGeometry(1,0),ice,bergs));}
   const floes=[];for(let i=0;i<26;i++){const x=-60+r()*120,z=edgeP(x)-5-r()*26;floes.push([x,-.9,z,1.5+r()*3,r()*6,0,0,.25])}g.add(inst(new THREE.CylinderGeometry(1,1.05,1,7),mat(0xf2f8fc),floes,false));
   // pole marker and camp
   const PM=gProp('p_marker',1);if(PM){PM.position.set(-8.6,H(-8.6,11.4),11.4);g.add(PM)}else{const pm=new THREE.Group();for(let i=0;i<6;i++)pm.add(C(.07,.07,.22,mat(i%2?0xd8362b:0xf4f4f4),0,.11+i*.22,0,12));pm.add(E(.2,.2,.2,mat(0xdfe8f0,{metalness:1,roughness:.08}),0,1.5,0));pm.position.set(-8.6,H(-8.6,11.4),11.4);g.add(pm);}
@@ -716,19 +728,19 @@ polar(W,g){const r=rng(51),H=W.h;W.col=[];
       const x=walk?bx+Math.sin(t*.35+ph)*2.6:bx,z=bz;p.position.set(x,H(x,z),z);if(walk)p.rotation.y=Math.cos(t*.35+ph)>0?Math.PI/2:-Math.PI/2})}
   const s=seal();s.position.set(9.5,H(9.5,-14.5),-14.5);s.rotation.y=-1.9;g.add(s);W.col.push({x:9.5,z:-14.5,r:1.2});
   arcticCorner(W,g,3.6,15.8);
-  const dr=scatter(52,40,60,(x,z)=>z>edgeP(x)+3).map(p=>[p[0],H(p[0],p[1])-.1,p[1],1.2+p[2]*2,p[3]*6,0,0,.3+p[2]*.4]);g.add(inst(SPH,mat(0xf7fbff,{roughness:.8}),dr,false));
+  
   const sg=glow(0xffd9a0,90,1);sg.position.set(0,16,-220);g.add(sg);const s2=glow(0xfff6e0,26,1);s2.position.set(0,16,-219);g.add(s2);
   W.anim.push(t=>{sea.position.y=-.95+Math.sin(t*.8)*.04})},
 mount(W,g){const r=rng(71),H=W.h;W.col=[];
   const pines=scatter(72,LITE?200:340,95,(x,z)=>{const dx=Math.abs(x-pxM(z)),y=H(x,z);return dx>4.6&&y<15.5&&(H(x+1,z)-y)**2+(H(x,z+1)-y)**2<.9&&Math.hypot(x,z-31)>5}),tr=[],c1=[],c2=[];
   pines.forEach(p=>{const[x,z]=p;if(Math.abs(x-pxM(z))<9.5)W.col.push({x,z,r:.55})});
   FLORA.conifers(g,pines.map(p=>({x:p[0],y:H(p[0],p[1])-.1,z:p[1],h:(.8+p[2]*.9)*4.6,rot:p[3]*6.283,w:.9+p[3]*.3})));
-  const rk=scatter(73,110,60,(x,z)=>Math.abs(x-pxM(z))>3.4).map(p=>[p[0],H(p[0],p[1])+.1,p[1],.3+p[2]*1.1,p[3]*6,p[2]*3,0,.25+p[3]*.8]);g.add(inst(rockGeo(),flat(mat(0x8a8178)),rk));
+  const rk=scatter(73,110,60,(x,z)=>Math.abs(x-pxM(z))>3.4).map(p=>[p[0],H(p[0],p[1])+.1,p[1],.3+p[2]*1.1,p[3]*6,p[2]*3,0,.25+p[3]*.8]);if(!addRocks(g,rk,[2,3,1],0x9d9a95))g.add(inst(rockGeo(),flat(mat(0x8a8178)),rk));
   // stream ribbon
   const pts=[],N=90;for(let i=0;i<=N;i++){const z=-31+i*(61/N),x=pxM(z)+3.4+Math.sin(z*.4)*.4;pts.push([x,z])}
   const pos=[],idx=[];pts.forEach(([x,z],i)=>{const w=.5+i/N*.5;pos.push(x-w,H(x-w,z)+.07,z,x+w,H(x+w,z)+.07,z);if(i<N){const a=i*2;idx.push(a,a+2,a+1,a+1,a+2,a+3)}});
   const sg=new THREE.BufferGeometry();sg.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));sg.setIndex(idx);sg.computeVertexNormals();
-  g.add(new THREE.Mesh(sg,new THREE.MeshStandardMaterial({color:0x7fc8ee,roughness:.08,metalness:.2,envMapIntensity:1.5,transparent:true,opacity:.9})));
+  {const sm=new THREE.MeshStandardMaterial({color:0x1f4f63,roughness:.08,metalness:0,envMapIntensity:.55,transparent:true,opacity:.9});if(window.PBR){PBR.apply(sm,'water',.4,{mix:0,normal:.8});if(typeof WATER!=='undefined')WATER.push(sm.userData.pbr.u)}g.add(new THREE.Mesh(sg,sm))}
   const gl=E(5,2.2,4,flat(mat(0xe4f2fb,{roughness:.4})),pxM(-33)+3.2,H(pxM(-33)+3.2,-34)+.6,-34.5);g.add(gl);
   const th=thermo(false);th.position.set(-2.6,H(-2.6,20),20);g.add(th);
   // viewpoint: cairn and prayer flags
@@ -915,10 +927,10 @@ document.querySelectorAll('.mode').forEach(b=>b.onclick=()=>startGame(b.dataset.
 $('againTest').onclick=()=>startGame("test");$('againStudy').onclick=()=>startGame("study");
 $('soundBtn').onclick=()=>{G.sound=!G.sound;$('soundBtn').firstElementChild.className="ico "+(G.sound?"ico-snd":"ico-mute");if(!G.sound)hush()};
 $('soundBtn').classList.add('hidden');
-function loadAssets(){const names=["earth","tex","kid","rafiq","polar_bear","camel","tahr","seal","macaw","eagle","p_thermo","p_rain","p_scope","p_marker","p_canoe","p_tent","p_tunnel","p_pulk","p_cairn","p_berg","p_rug"];let done=0;const L_=THREE.GLTFLoader?new THREE.GLTFLoader():null;
+function loadAssets(){const names=["earth","tex","kid","rafiq","polar_bear","camel","tahr","seal","macaw","eagle","p_thermo","p_rain","p_scope","p_marker","p_canoe","p_tent","p_tunnel","p_pulk","p_cairn","p_berg","p_rug","cards","rocks","bergs"];let done=0;const L_=THREE.GLTFLoader?new THREE.GLTFLoader():null;
   return Promise.all(names.map(n=>new Promise(res=>{const fin=()=>{done++;$('loadNote').textContent="جارٍ تجهيز الرحلة… "+done+"/"+names.length;res()};
     const sc=document.createElement('script');sc.src=(["kid","rafiq","tex"].includes(n)?"../assets/":"assets/")+n+".js";sc.onerror=fin;
-    sc.onload=()=>{if(n==="tex"||n==="earth"||!L_){fin();return}try{const bin=atob(window.__GLB[n]);window.__GLB[n]=null;const u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);
+    sc.onload=()=>{if(n==="tex"||n==="earth"||n==="cards"||!L_){fin();return}try{const bin=atob(window.__GLB[n]);window.__GLB[n]=null;const u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);
       const cib=window.createImageBitmap;window.createImageBitmap=undefined;
       try{L_.parse(u.buffer,"",g=>{ASSETS[n]=g;g.name=n;fin()},fin)}finally{window.createImageBitmap=cib}}catch(e){fin()}};
     document.head.appendChild(sc)})))}
@@ -996,10 +1008,10 @@ window.__G={KG,scene,renderer,THREE,G,P,R,WORLDS,WBY,enterWorld,showSpace,pickWo
 /* ---------- GEO LOOK: realism pass for the four geography worlds ----------
    terrain: two-layer PBR splat by slope; scenery: classified by hue/sat/lightness; water: animated ripple normals */
 const GEOLOOK=(()=>{
-const TER={desert:{base:"sand_dunes",bs:.12,slope:"sandstone",ss:.22,lo:.8,hi:.93,n:1.3},
-  forest:{base:"moss_grass",bs:.35,slope:"forest_dirt",ss:.3,lo:.82,hi:.94,n:1.1},
-  polar:{base:"snow",bs:.22,slope:"ice_cracked",ss:.18,lo:.84,hi:.95,n:.9},
-  mount:{base:"moss_grass",bs:.3,slope:"rock_grey",ss:.14,lo:.74,hi:.9,n:1.4}};
+const TER={desert:{base:"sand_dunes",bs:.07,slope:"sandstone",ss:.35,lo:.8,hi:.93,n:1.1},
+  forest:{base:"forest_dirt",bs:.42,slope:"forest_mud",ss:.55,lo:.82,hi:.94,n:1.2},
+  polar:{base:"snow",bs:.35,slope:"ice_cracked",ss:.18,lo:.84,hi:.95,n:.9},
+  mount:{base:"moss_grass",bs:.45,slope:"rock_grey",ss:.4,lo:.74,hi:.9,n:1.3}};
 const hsl={h:0,s:0,l:0};
 function classify(m){if(!m||!m.isMeshStandardMaterial||m.userData.pbr||m.userData.noPbr||m.map)return null;
   if(m.emissive&&m.emissive.getHex()>0)return null;if(m.transparent&&m.opacity<.95)return null;
