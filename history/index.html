@@ -217,7 +217,7 @@ button{font-family:inherit;cursor:pointer;border:0}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="../web-shim.js"></script>
-<script>window.__PBR_BASE="../assets/pbr/";window.__PBRV="289a881c";window.__AV={"kid": "d070a3e5", "rafiq": "52c6d768", "tex": "cbf29c71", "statues": "8cf0d669", "hyk_chariot": "23bd7bc2", "hyk_warrior": "274110b3", "hyk_official": "5d3c6e30", "hyk_farmer": "0fbc24b7", "halls": "e6d300f6", "hyk_env": "10bdb9c1"}</script>
+<script>window.__PBR_BASE="../assets/pbr/";window.__PBRV="289a881c";window.__AV={"kid": "d070a3e5", "rafiq": "52c6d768", "tex": "cbf29c71", "statues": "ce45d00c", "hyk_chariot": "23bd7bc2", "hyk_props": "a0f36ef4", "hyk_warrior": "274110b3", "hyk_official": "5d3c6e30", "hyk_farmer": "0fbc24b7", "halls": "e6d300f6", "hyk_env": "93878dae"}</script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/utils/SkeletonUtils.js"></script>
 <script>/*PBR*/
@@ -814,6 +814,7 @@ function buildGLB(){
     [[-6.9,-1,1.7],[6.9,-1,1.5],[-5.6,-22.6,1.5],[5.6,-22.6,1.7],[-6.9,-25,1.7],[6.9,-25,1.5],[-5.6,-46.6,1.5],[5.6,-46.6,1.7],[-6.9,-49,1.7],[6.9,-49,1.5],[-5.6,-70.6,1.5],[5.6,-70.6,1.7]].forEach(([x,z,h])=>{
       const p=FLORA.palm(rr);const bb=new THREE.Box3().setFromObject(p);p.scale.setScalar((h+1.1)/Math.max(1,bb.max.y-bb.min.y));p.position.set(x,.58,z);p.rotation.y=rr()*6.28;world.add(p)})}
   const CAST=/Statue|Props|ExhibitsStatic/;
+  {const th=ss.getObjectByName('Statue_thutmose');if(th)th.traverse(o=>{if(o.isMesh&&!o.material.userData.lit){o.material.userData.lit=1;o.material.color.setRGB(1.9,1.9,2.0);o.material.roughness=.5}})}
   [hs,ss].forEach(root=>root.traverse(o=>{if(!o.isMesh)return;
     o.receiveShadow=true;o.castShadow=CAST.test(o.name)||CAST.test(o.parent?o.parent.name:"")}));
   for(let k=0;k<3;k++){const zg=-(k+1)*L,nm='Gate'+(k+1)+'_',dl=hs.getObjectByName(nm+'DoorL'),dr=hs.getObjectByName(nm+'DoorR'),lock=hs.getObjectByName(nm+'Lock'),mats=[];
@@ -856,7 +857,7 @@ function useRafiqGLB(){const g=ASSETS.rafiq,o=fitModel(g.scene,.95),u=rafiq.user
   const hit=new THREE.Raycaster(new THREE.Vector3(0,.686,3),new THREE.Vector3(0,0,-1)).intersectObject(o,true)[0],fz=hit?hit.point.z:.17;
   const face=new THREE.Mesh(new THREE.PlaneGeometry(.3,.19),new THREE.MeshBasicMaterial({map:u.ft,transparent:true}));face.position.set(0,.686,fz+.007);rafiq.add(face);
   u.wl=new THREE.Object3D();u.wr=new THREE.Object3D();u.aL=new THREE.Object3D();u.aR=new THREE.Object3D();u.head=new THREE.Object3D();u.glb=o;u.small=true}
-function loadAssets(){const names=["tex","halls","statues","kid","rafiq","hyk_env","hyk_warrior","hyk_farmer","hyk_chariot","hyk_official"];let done=0;if(!THREE.GLTFLoader)return Promise.resolve();const L_=new THREE.GLTFLoader();
+function loadAssets(){const names=["tex","halls","statues","kid","rafiq","hyk_env","hyk_props","hyk_warrior","hyk_farmer","hyk_chariot","hyk_official"];let done=0;if(!THREE.GLTFLoader)return Promise.resolve();const L_=new THREE.GLTFLoader();
   return Promise.all(names.map(n=>new Promise(res=>{const fin=()=>{done++;$('loadNote').textContent="جارٍ تجهيز المعرض… "+done+"/"+names.length;res()};
     const sc=document.createElement('script');sc.src=(["kid","rafiq","tex"].includes(n)?"../assets/":"assets/")+n+".js?v="+((window.__AV||{})[n]||"0");sc.onerror=fin;
     sc.onload=()=>{if(n==="tex"){fin();return}try{const bin=atob(window.__GLB[n]);window.__GLB[n]=null;const u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);
@@ -875,7 +876,7 @@ const HCOL=[{x:291.5,z:-19.5,hx:4.7,hz:3.5},{x:292.4,z:-12.6,hx:2.9,hz:2.1},{x:2
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 const fade=v=>{$('fade').style.opacity=v};
 const sunOff=new THREE.Vector3(6,14,7);
-const hykReady=()=>!!(USE_GLB&&ASSETS.hyk_env&&ASSETS.hyk_warrior&&ASSETS.hyk_farmer&&ASSETS.hyk_chariot&&THREE.SkeletonUtils);
+const hykReady=()=>!!(USE_GLB&&ASSETS.hyk_env&&ASSETS.hyk_props&&ASSETS.hyk_warrior&&ASSETS.hyk_farmer&&ASSETS.hyk_chariot&&THREE.SkeletonUtils);
 function setSky(on){skyDome.material=on?SKY.hyk:SKY.gallery;scene.environment=on?ENV.hyk:ENV.gallery;if(on){scene.fog.color.set(0xf0a868);scene.fog.near=45;scene.fog.far=140;hemi.color.set(0xffe6c0);hemi.groundColor.set(0xb0703c);hemi.intensity=.3;sun.color.set(0xffb070);sun.intensity=1.5;sunOff.set(-10,7.5,-6)}
   else{scene.fog.color.set(0x1b1530);scene.fog.near=24;scene.fog.far=58;hemi.color.set(0xfff4dc);hemi.groundColor.set(0x6a5a80);hemi.intensity=.2;sun.color.set(0xfff1cf);sun.intensity=.8;sunOff.set(6,14,7)}}
 function hykNear(){let best=null,bd=2.6;for(const c of HCLUES){const d=Math.hypot(P.x-c.x,P.z-c.z);if(d<bd){bd=d;best={kind:"clue",c}}}
@@ -894,6 +895,16 @@ function hykBuild(){const env=ASSETS.hyk_env.scene;HYK.root=new THREE.Group();HY
   env.traverse(m=>{if(m.isMesh){(Array.isArray(m.material)?m.material:[m.material]).forEach(x=>{if(x.name==='Hyk_TentCloth'){x.color.set(0x4a3b30);x.side=THREE.DoubleSide}else if(x.name==='Cream'&&!x.userData.hykStone){const c=x.clone();c.userData.hykStone=1;c.color.set(0xe8d8bc);c.userData.pbr=null;m.material=Array.isArray(m.material)?m.material.map(y=>y===x?c:y):c;if(window.PBR)PBR.apply(c,'sandstone',.9,{normal:1.3,rough:.6});c.userData.noPbr=true}})}});
   if(typeof FLORA!=="undefined"){const PALMS=[[286.5,-3.66,6.05],[285.58,-10.34,7.05],[287.28,-23.89,6.56],[285.6,-29.01,5.54],[313.8,-4.87,6.54],[315,-11.93,5.72],[314.6,-19.71,6.94],[288.95,-30.9,6.02],[310.73,-31.21,6.54],[283.2,-16,7.51],[316.49,-27,6.01],[296.5,-31.3,5.51]];
     let sd=7;const rr=()=>{sd=(sd*9301+49297)%233280;return sd/233280};PALMS.forEach(([x,z,h])=>{const p=FLORA.palm(rr);const b=new THREE.Box3().setFromObject(p);p.scale.setScalar(h/Math.max(1,b.max.y-b.min.y)*1.05);p.position.set(x,0,z);p.rotation.y=rr()*6.28;HYK.root.add(p)})}
+  /*HYKPROPS*/{const PS=ASSETS.hyk_props.scene,put=(n,x,z,sc,ry,y,ctr)=>{const src=PS.getObjectByName('P_'+n);if(!src)return;const o=src.clone();o.scale.setScalar(sc||1);o.rotation.y=ry||0;o.position.set(x,y||0,z);
+      o.traverse(m=>{if(!m.isMesh)return;m.castShadow=m.receiveShadow=true;const t=m.material;if(!t.userData.hp){t.userData.hp=1;t.userData.noPbr=true;if(/_metal$/.test(t.name)){t.metalness=.35;t.roughness=.5}else{t.metalness=0;t.roughness=.86}}});
+      HYK.root.add(o);if(ctr){o.updateMatrixWorld(true);const b=new THREE.Box3().setFromObject(o);o.position.x+=x-(b.min.x+b.max.x)/2;o.position.z+=z-(b.min.z+b.max.z)/2}return o};
+    put('avaris_gate',300,-32.1,1.725,0);
+    put('tax_station',290.6,-10.9,1.3,0,0,1);put('clay_pots',287.9,-9.9,1.2,.4);put('clay_pots',293.4,-10.3,1.1,2.3);
+    put('campfire',309.6,-23.6,1,0);put('clay_pots',314.5,-23.3,1.2,1.1);put('clay_pots',310.9,-25.3,1,3.6);
+    put('weapon_rack',312.5,-21.5,1.15,-Math.PI/4,0,1);
+    put('fallen_king_statue',294.44,-8.33,1.3,Math.PI/2,0,1);
+    [[287.9,-17.3],[290.3,-17.3],[295.1,-17.3],[290.3,-21.7],[292.7,-21.7]].forEach((p,i)=>put('lotus_column',p[0],p[1],1.088,i*1.3,.33));
+    [[292.7,-17.3,.5],[287.9,-21.7,2.4],[295.1,-21.7,4.1]].forEach(p=>put('lotus_column_broken',p[0],p[1],1.1,p[2],.33))}
   dress(env);env.traverse(o=>{if(!o.isMesh)return;
     const nm=o.name+"|"+(o.parent?o.parent.name:"");o.receiveShadow=true;o.castShadow=/Hyk_Static/.test(nm);
     if(/Flag_/.test(nm)){const p=o.geometry.attributes.position;o.userData.base=p.array.slice();HYK.flags.push(o);o.material.side=THREE.DoubleSide}

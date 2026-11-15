@@ -209,7 +209,7 @@ button{font-family:inherit;cursor:pointer;border:0}
 <div class="overlay hidden" id="err"><div id="loading">تعذّر تحميل المحرك ثلاثي الأبعاد. أعد تحميل الصفحة.</div></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="../web-shim.js"></script>
-<script>window.__PBR_BASE="../assets/pbr/";window.__PBRV="289a881c";window.__AV={"kid": "d070a3e5", "rafiq": "52c6d768", "tex": "cbf29c71", "macaw": "8af47e96", "polar_bear": "02a54afb", "p_rain": "d26ac538", "p_thermo": "0f6aae89", "p_marker": "00385934", "earth": "d1a65b60", "p_tunnel": "00ff1fcd", "cards": "f0c436f8", "bergs": "c460454f", "seal": "fa725150", "rocks": "b418c475", "eagle": "94abaae5", "p_berg": "c8343504", "camel": "c6fb2eae", "penguin": "79d0c662", "p_canoe": "5e4f8108", "p_cairn": "477e37e6", "p_tent": "8fc09e5c", "p_rug": "da979569", "p_pulk": "065ca4d9", "p_scope": "9dfa9f0a", "tahr": "e9ad3338"}</script>
+<script>window.__PBR_BASE="../assets/pbr/";window.__PBRV="289a881c";window.__AV={"kid": "d070a3e5", "rafiq": "52c6d768", "tex": "cbf29c71", "macaw": "8af47e96", "polar_bear": "02a54afb", "p_rain": "d26ac538", "p_thermo": "0f6aae89", "p_marker": "00385934", "earth": "d1a65b60", "p_tunnel": "00ff1fcd", "cards": "f0c436f8", "bergs": "c460454f", "seal": "fa725150", "rocks": "b418c475", "eagle": "94abaae5", "p_berg": "c8343504", "camel": "c6fb2eae", "penguin": "79d0c662", "p_canoe": "5e4f8108", "p_cairn": "477e37e6", "p_tent": "8fc09e5c", "p_rug": "da979569", "p_pulk": "065ca4d9", "space_pod": "a89e3549", "p_scope": "9dfa9f0a", "tahr": "e9ad3338"}</script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/utils/SkeletonUtils.js"></script>
 <script>/*PBR*/
@@ -606,7 +606,12 @@ function palm(r){const g=new THREE.Group(),tr=mat(0x8a6a44),lf=new THREE.MeshSta
   const fg=new THREE.ConeGeometry(.34,2.7,4);fg.translate(0,1.35,0);
   for(let i=0;i<9;i++){const f=new THREE.Mesh(fg,lf);f.scale.set(1,1,.14);f.position.set(x,y,0);f.rotation.order='YXZ';f.rotation.y=i/9*6.283+r();f.rotation.x=1.05+r()*.45;f.castShadow=true;g.add(f)}
   g.add(E(.12,.12,.12,mat(0xa0622a),x+.15,y-.15,.1),E(.12,.12,.12,mat(0xa0622a),x-.12,y-.2,-.1));return g}
-function pod(){const g=new THREE.Group(),wh=mat(0xf4f1e8,{roughness:.35}),ye=mat(0xffc93c,{roughness:.4}),gl=mat(0x7fd8ff,{roughness:.1,emissive:0x1a5a80});
+function pod(){const A=ASSETS.space_pod;if(!A)return podOld();const g=new THREE.Group(),r=A.scene.clone(true);r.scale.setScalar(1.36);g.add(r);
+  r.traverse(o=>{if(!o.isMesh)return;o.castShadow=o.receiveShadow=true;const m=o.material=o.material.clone();m.userData.noPbr=true;
+    if(/_glass$/.test(m.name)){m.roughness=.08;m.metalness=.2;m.envMapIntensity=1.6;m.emissive=new THREE.Color(0x1a5a80);m.emissiveIntensity=.35}
+    else if(/_metal$/.test(m.name)){m.metalness=.6;m.roughness=.35;m.envMapIntensity=1.1}else m.envMapIntensity=.5});
+  const gw=glow(0x7fd8ff,3,.3);gw.position.y=1.8;g.add(gw);return g}
+function podOld(){const g=new THREE.Group(),wh=mat(0xf4f1e8,{roughness:.35}),ye=mat(0xffc93c,{roughness:.4}),gl=mat(0x7fd8ff,{roughness:.1,emissive:0x1a5a80});
   g.add(E(1.1,1.25,1.1,wh,0,1.75,0),E(.6,.6,.2,gl,0,1.9,.98),C(1.25,1.25,.18,ye,0,1.25,0,24));
   for(let i=0;i<3;i++){const a=i/3*6.283,l=C(.07,.07,1.2,ye,Math.cos(a)*1.0,.5,Math.sin(a)*1.0);l.rotation.z=Math.cos(a)*.45;l.rotation.x=-Math.sin(a)*.45;g.add(l,E(.2,.06,.2,ye,Math.cos(a)*1.25,.05,Math.sin(a)*1.25))}
   const gw=glow(0x7fd8ff,3,.3);gw.position.y=1.8;g.add(gw);return g}
@@ -937,7 +942,7 @@ document.querySelectorAll('.mode').forEach(b=>b.onclick=()=>startGame(b.dataset.
 $('againTest').onclick=()=>startGame("test");$('againStudy').onclick=()=>startGame("study");
 $('soundBtn').onclick=()=>{G.sound=!G.sound;$('soundBtn').firstElementChild.className="ico "+(G.sound?"ico-snd":"ico-mute");if(!G.sound)hush()};
 $('soundBtn').classList.add('hidden');
-function loadAssets(){const names=["earth","tex","kid","rafiq","polar_bear","camel","tahr","seal","macaw","eagle","penguin","p_thermo","p_rain","p_scope","p_marker","p_canoe","p_tent","p_tunnel","p_pulk","p_cairn","p_berg","p_rug","cards","rocks","bergs"];let done=0;const L_=THREE.GLTFLoader?new THREE.GLTFLoader():null;
+function loadAssets(){const names=["earth","tex","kid","rafiq","polar_bear","camel","tahr","seal","macaw","eagle","penguin","space_pod","p_thermo","p_rain","p_scope","p_marker","p_canoe","p_tent","p_tunnel","p_pulk","p_cairn","p_berg","p_rug","cards","rocks","bergs"];let done=0;const L_=THREE.GLTFLoader?new THREE.GLTFLoader():null;
   return Promise.all(names.map(n=>new Promise(res=>{const fin=()=>{done++;$('loadNote').textContent="جارٍ تجهيز الرحلة… "+done+"/"+names.length;res()};
     const sc=document.createElement('script');sc.src=(["kid","rafiq","tex"].includes(n)?"../assets/":"assets/")+n+".js?v="+((window.__AV||{})[n]||"0");sc.onerror=fin;
     sc.onload=()=>{if(n==="tex"||n==="earth"||n==="cards"||!L_){fin();return}try{const bin=atob(window.__GLB[n]);window.__GLB[n]=null;const u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);
