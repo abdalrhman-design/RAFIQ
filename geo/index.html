@@ -538,7 +538,14 @@ function cards(g,name,list,shadow=false){const t=cardTex(name);if(!t||!list.leng
 function glbPart(asset,name){const A=ASSETS[asset];if(!A)return null;let f=null;A.scene.traverse(o=>{if(!f&&o.isMesh&&(o.name===name||(o.parent&&o.parent.name===name)))f=o});return f}
 function addRocks(g,list,ids,tint){const parts=ids.map(i=>glbPart('rocks','Rock'+i)).filter(Boolean);if(!parts.length)return false;
   parts.forEach((pm,k)=>{const L=list.filter((_,i)=>i%parts.length===k).map(t=>[t[0],t[1]-.08*t[3],t[2],t[3]*1.55,t[4],(t[5]||0)*.15,0,t[3]*1.55*(.75+((t[4]*7)%1)*.5)]);
-    const m=pm.material.clone();m.aoMap=null;m.metalnessMap=null;m.roughnessMap=null;m.color.set(tint);m.roughness=.92;m.metalness=0;m.envMapIntensity=.4;m.userData.noPbr=true;const im=inst(pm.geometry,m,L,true);im.receiveShadow=true;g.add(im)});return true}
+    const m=pm.material.clone();m.aoMap=null;m.metalnessMap=null;m.roughnessMap=null;m.color.set(tint);m.roughness=.92;m.metalness=0;m.envMapIntensity=.4;m.userData.noPbr=true;const im=inst(pm.geometry,m,L,false);im.receiveShadow=true;g.add(im)});return true}
+function frondFern(n=7){const t=cardTex('fern_frond');if(!t)return null;const asp=t._asp,P=[],N=[],U=[],I=[];
+  for(let k=0;k<n;k++){const a=k/n*Math.PI*2+(k%2)*.35,L=.75+((k*37)%10)/40,ca=Math.cos(a),sa=Math.sin(a),px=-sa,pz=ca,w=asp*L*.5,S=5,b=P.length/3;
+    let x=0,y=0,z=0;const pts=[];for(let i=0;i<=S;i++){const u=i/S,th=(.35+.95*u)*(1+((k*13)%5)/20);pts.push([x,y,z]);x+=ca*Math.sin(th)*L/S;z+=sa*Math.sin(th)*L/S;y+=Math.cos(th)*L/S}
+    pts.forEach(([X,Y,Z],i)=>{const u=i/S;for(const sd of[-1,1]){P.push(X+px*w*sd,Y,Z+pz*w*sd);N.push(ca*.3,1,sa*.3);U.push(sd<0?0:1,u)}});
+    for(let i=0;i<S;i++){const q=b+i*2;I.push(q,q+1,q+3,q,q+3,q+2)}}
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(P,3));g.setAttribute('normal',new THREE.Float32BufferAttribute(N,3));g.normalizeNormals();g.setAttribute('uv',new THREE.Float32BufferAttribute(U,2));g.setIndex(I);
+  const m=new THREE.MeshStandardMaterial({map:t,alphaTest:.45,side:THREE.DoubleSide,roughness:.85,metalness:0,envMapIntensity:.3});m.userData.noPbr=true;return [g,m]}
 function gProp(name,sc=1){const A=ASSETS[name];if(!A)return null;const root=A.scene.clone(true),g=new THREE.Group();g.add(root);root.scale.setScalar(sc);
   root.traverse(o=>{if(!o.isMesh)return;o.castShadow=true;o.receiveShadow=true;const m=o.material=o.material.clone();m.userData.noPbr=true;
     if(m.metalness>.5){m.map=null;m.color.set(0xa4a9ac);m.metalness=.85;m.envMapIntensity=1.3;m.roughness=Math.min(Math.max(m.roughness,.12),.35)}else m.envMapIntensity=.45;if(m.transparent){m.depthWrite=false;m.envMapIntensity=1.4}});return g}
@@ -551,9 +558,9 @@ function thermoG(hot){const G=gProp('p_thermo',2);if(!G)return null;const g=new 
 function glbAnimal(name,opt){const A=ASSETS[name];if(!A)return null;const root=A.scene.clone(true),g=new THREE.Group();g.add(root);
   root.traverse(o=>{if(!o.isMesh)return;o.castShadow=true;o.receiveShadow=true;const m=o.material=o.material.clone();
     const T=/Camel/.test(m.name)?["camel_fur",3,.8]:/Tahr_(Coat|Mane)/.test(m.name)?["tahr_fur",3.4,.7]:/Seal/.test(m.name)?["seal_skin",1.6,.35]:null;
-    if(T){const f=new THREE.MeshStandardMaterial({color:0xffffff,vertexColors:true,roughness:/Seal/.test(m.name)?.55:.92,metalness:0,envMapIntensity:/Seal/.test(m.name)?.7:.4});f.name=m.name;PBR.apply(f,T[0],T[1],{normal:1,mix:T[2],rough:.5});o.material=f}
+    if(T){const f=new THREE.MeshStandardMaterial({color:0xffffff,map:m.map||null,vertexColors:!m.map,roughness:/Seal/.test(m.name)?.55:.92,metalness:0,envMapIntensity:/Seal/.test(m.name)?.7:.4});f.name=m.name;PBR.apply(f,T[0],T[1],{normal:1,mix:m.map?0:T[2],rough:.5});o.material=f}
     else if(/Eye|Horn/.test(m.name)){m.userData.noPbr=true;m.envMapIntensity=.6}else m.userData.fur=true;
-    if(/Wing/.test(m.name))m.side=THREE.DoubleSide});
+    if(/Wing/.test(m.name)){m.side=THREE.DoubleSide;if(m.map){m.alphaTest=.5;m.transparent=false;m.userData.noPbr=true;m.userData.fur=false}}});
   if(opt&&opt.scale)root.scale.setScalar(opt.scale);return g}
 function camel(){const G=glbAnimal('camel');if(G){G.userData.head=G.getObjectByName('Camel_Head');return G}const g=new THREE.Group(),tan=mat(0xc79a5e),dk=mat(0x8a643a),red=mat(0xb8402c),ey=mat(0x1a1410,{roughness:.3});
   g.add(E(.44,.42,.86,tan,0,1.5,0),E(.3,.34,.36,tan,0,1.98,-.05),box(.72,.06,.6,red,0,1.78,-.05),box(.74,.05,.12,mat(0xebddbe),0,1.79,-.05));
@@ -693,7 +700,7 @@ desert(W,g){const r=rng(11),H=W.h;W.col=[{x:12,z:-15,r:5.1},{x:-14,z:-12,r:2.6}]
   g.add(inst(new THREE.ConeGeometry(.6,1,5),mat(0x5f9a3e),gr));
   const sg=glow(0xfff2c0,60,.9);sg.position.set(95,150,-105);g.add(sg)},
 forest(W,g){const r=rng(31),H=W.h;W.col=[];
-  const riv=water(260,-.82,0x5a7350,.9);g.add(riv);
+  const riv=water(260,-.82,0x4b3d29,.95);riv.material.envMapIntensity=.5;riv.material.metalness=0;if(window.PBR){PBR.apply(riv.material,'river_water',.09,{mix:.65,normal:.9});if(typeof WATER!=='undefined'&&riv.material.userData.pbr)WATER.push(riv.material.userData.pbr.u)}g.add(riv);
   const clear=(x,z)=>W.clues.every(c=>Math.hypot(x-c.x,z-c.z)>4.2)&&Math.hypot(x-W.spawn[0],z-W.spawn[1])>6&&Math.abs(x-rxF(z))>5.6;
   const tp=scatter(32,LITE?140:200,92,(x,z)=>clear(x,z)),tr=[],ca=[],cb=[],vines=[];
   tp.forEach(p=>{const[x,z]=p,h=11+p[2]*11;if(Math.hypot(x,z)<48)W.col.push({x,z,r:h*.03+.45})});
@@ -702,7 +709,7 @@ forest(W,g){const r=rng(31),H=W.h;W.col=[];
   const gx=-12.5,gz=-8,gy=H(gx,gz);FLORA.kapok(g,gx,gy,gz);
   W.col.push({x:gx,z:gz,r:3.3});
   const fern=scatter(33,LITE?260:520,60,(x,z)=>Math.abs(x-rxF(z))>4.2&&Math.hypot(x-W.spawn[0],z-W.spawn[1])>3).map(p=>[p[0],H(p[0],p[1])+.25,p[1],.5+p[2]*.7,p[3]*6,0,0,.35+p[2]*.5]);
-  g.add(inst(new THREE.ConeGeometry(1,1.4,6),flat(mat(0x4c9a3a)),fern,false));
+  {const FF=frondFern();if(FF)g.add(inst(FF[0],FF[1],fern.map(t=>[t[0],t[1]-.27,t[2],t[3]*1.25,t[4]]),false));else g.add(inst(new THREE.ConeGeometry(1,1.4,6),flat(mat(0x4c9a3a)),fern,false));}
   const fl=scatter(34,90,50,(x,z)=>Math.abs(x-rxF(z))>4.2).map(p=>[p[0],H(p[0],p[1])+.5,p[1],.12+p[2]*.1,0]);
   if(!cards(g,'heliconia',fl.map(t=>[t[0],t[1]-.5,t[2],1.1+t[3]*4,t[4]+((t[0]*13)%6)]),true)){const fm=inst(new THREE.IcosahedronGeometry(1,0),mat(0xffffff,{emissive:0x331111}),fl,false),cc=new THREE.Color(),pal=[0xff5a7a,0xffc23a,0xff7a2e,0xd24ae0,0xffffff];fl.forEach((_,i)=>fm.setColorAt(i,cc.set(pal[i%5]).convertSRGBToLinear()));g.add(fm);}
   cards(g,'orchid',scatter(35,26,40,(x,z)=>Math.abs(x-rxF(z))>4.5).map(p=>[p[0],H(p[0],p[1])-.02,p[1],.45+p[2]*.3,p[3]*6]));
@@ -716,7 +723,7 @@ polar(W,g){const r=rng(51),H=W.h;W.col=[];
   const sea=water(520,-.95,0x1c4c70,.93);g.add(sea);
   const ice=flat(mat(0xd8eefa,{roughness:.35}));const bergs=[];for(let i=0;i<12;i++){const x=-70+i*12.5+r()*6,z=-34-r()*70;bergs.push([x,-.2+r()*.8,z,3+r()*6,r()*6,r()*.3,r()*.3,2+r()*5])}
   {const BG=[0,1,2].map(i=>glbPart('bergs','Berg'+i));if(BG[0]){BG.forEach((pm,k)=>{const L=bergs.filter((_,i)=>i%3===k).map(t=>[t[0],-1.25,t[2],t[3]*.85,t[4],0,0,t[3]*(k===0?.75:1.05)]);const m=pm.material.clone();m.roughness=.32;m.metalness=0;m.envMapIntensity=1.1;m.color.set(0xf4fbff);m.userData.noPbr=true;g.add(inst(pm.geometry,m,L,true))})}else g.add(inst(new THREE.IcosahedronGeometry(1,0),ice,bergs));}
-  const floes=[];for(let i=0;i<26;i++){const x=-60+r()*120,z=edgeP(x)-5-r()*26;floes.push([x,-.9,z,1.5+r()*3,r()*6,0,0,.25])}g.add(inst(new THREE.CylinderGeometry(1,1.05,1,7),mat(0xf2f8fc),floes,false));
+  const floes=[];for(let i=0;i<26;i++){const x=-60+r()*120,z=edgeP(x)-5-r()*26;floes.push([x,-.9,z,1.5+r()*3,r()*6,0,0,.25])}{const fm=mat(0xf2f8fc,{roughness:.6});if(window.PBR){PBR.apply(fm,'snow_crust',.35,{normal:1.1});fm.userData.noPbr=true}const fg=new THREE.CylinderGeometry(1,1.05,1,9,1);{const q=fg.attributes.position;for(let i=0;i<q.count;i++){const y=q.getY(i);if(y>0){const x=q.getX(i),z=q.getZ(i),k=1+.12*Math.sin(x*7+z*5);q.setXYZ(i,x*k,y,z*k)}}fg.computeVertexNormals()}g.add(inst(fg,fm,floes,false))}
   // pole marker and camp
   const PM=gProp('p_marker',1);if(PM){PM.position.set(-8.6,H(-8.6,11.4),11.4);g.add(PM)}else{const pm=new THREE.Group();for(let i=0;i<6;i++)pm.add(C(.07,.07,.22,mat(i%2?0xd8362b:0xf4f4f4),0,.11+i*.22,0,12));pm.add(E(.2,.2,.2,mat(0xdfe8f0,{metalness:1,roughness:.08}),0,1.5,0));pm.position.set(-8.6,H(-8.6,11.4),11.4);g.add(pm);}
   const cols=[0x2f6fe0,0xe23b2e,0xffc93c,0x2fa860,0xf4f4f4];for(let i=0;i<5;i++){const a=.6+i*.5,x=-8.6+Math.cos(a)*2.6,z=11.4-Math.sin(a)*2.6,y=H(x,z),f=new THREE.Mesh(new THREE.PlaneGeometry(.6,.38,6,1),new THREE.MeshStandardMaterial({color:cols[i],side:THREE.DoubleSide,roughness:.8}));f.material.userData.noPbr=true;f.geometry.translate(.3,0,0);f.position.set(x+.02,y+1.98,z);f.castShadow=true;g.add(C(.03,.03,2.2,mat(0xcccccc,{roughness:.3}),x,y+1.1,z,6),f);W.anim.push(t=>{f.rotation.y=Math.sin(t*5+i)*.25})}
@@ -1009,7 +1016,7 @@ window.__G={KG,scene,renderer,THREE,G,P,R,WORLDS,WBY,enterWorld,showSpace,pickWo
 /* ---------- GEO LOOK: realism pass for the four geography worlds ----------
    terrain: two-layer PBR splat by slope; scenery: classified by hue/sat/lightness; water: animated ripple normals */
 const GEOLOOK=(()=>{
-const TER={desert:{base:"sand_dunes",bs:.07,slope:"sandstone",ss:.35,lo:.8,hi:.93,n:1.1},
+const TER={desert:{base:"sand_ripples",bs:.28,slope:"sandstone",ss:.35,lo:.8,hi:.93,n:1.1},
   forest:{base:"forest_dirt",bs:.42,slope:"forest_mud",ss:.55,lo:.82,hi:.94,n:1.2},
   polar:{base:"snow",bs:.35,slope:"ice_cracked",ss:.18,lo:.84,hi:.95,n:.9},
   mount:{base:"moss_grass",bs:.45,slope:"rock_grey",ss:.4,lo:.74,hi:.9,n:1.3}};
