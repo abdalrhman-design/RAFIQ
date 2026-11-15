@@ -810,6 +810,9 @@ function fitModel(root,h){root.updateMatrixWorld(true);const b=new THREE.Box3().
 function plaque(text,w,h){return new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({map:textTex(text,{w:512,h:Math.round(512*h/w),bg:"#f3cf6b",fg:"#2b2140",size:54})}))}
 function buildGLB(){
   const hs=ASSETS.halls.scene,ss=ASSETS.statues.scene;world.add(hs,ss);hs.updateMatrixWorld(true);ss.updateMatrixWorld(true);
+  if(typeof FLORA!=="undefined"){let sd=11;const rr=()=>{sd=(sd*9301+49297)%233280;return sd/233280};
+    [[-6.9,-1,1.7],[6.9,-1,1.5],[-5.6,-22.6,1.5],[5.6,-22.6,1.7],[-6.9,-25,1.7],[6.9,-25,1.5],[-5.6,-46.6,1.5],[5.6,-46.6,1.7],[-6.9,-49,1.7],[6.9,-49,1.5],[-5.6,-70.6,1.5],[5.6,-70.6,1.7]].forEach(([x,z,h])=>{
+      const p=FLORA.palm(rr);const bb=new THREE.Box3().setFromObject(p);p.scale.setScalar((h+1.1)/Math.max(1,bb.max.y-bb.min.y));p.position.set(x,.58,z);p.rotation.y=rr()*6.28;world.add(p)})}
   const CAST=/Statue|Props|ExhibitsStatic/;
   [hs,ss].forEach(root=>root.traverse(o=>{if(!o.isMesh)return;
     o.receiveShadow=true;o.castShadow=CAST.test(o.name)||CAST.test(o.parent?o.parent.name:"")}));
