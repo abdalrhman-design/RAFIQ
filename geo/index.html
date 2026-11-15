@@ -209,7 +209,7 @@ button{font-family:inherit;cursor:pointer;border:0}
 <div class="overlay hidden" id="err"><div id="loading">تعذّر تحميل المحرك ثلاثي الأبعاد. أعد تحميل الصفحة.</div></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="../web-shim.js"></script>
-<script>window.__PBR_BASE="../assets/pbr/";window.__PBRV="289a881c";window.__AV={"kid": "d070a3e5", "rafiq": "52c6d768", "tex": "cbf29c71", "macaw": "2d7b9e8d", "polar_bear": "02a54afb", "p_rain": "d26ac538", "p_thermo": "0f6aae89", "p_marker": "00385934", "earth": "d1a65b60", "p_tunnel": "00ff1fcd", "cards": "f0c436f8", "bergs": "c460454f", "seal": "f02a3c1e", "rocks": "b418c475", "eagle": "33906743", "p_berg": "c8343504", "camel": "50f94193", "p_canoe": "5e4f8108", "p_cairn": "477e37e6", "p_tent": "8fc09e5c", "p_rug": "da979569", "p_pulk": "065ca4d9", "p_scope": "9dfa9f0a", "tahr": "093d992d"}</script>
+<script>window.__PBR_BASE="../assets/pbr/";window.__PBRV="289a881c";window.__AV={"kid": "d070a3e5", "rafiq": "52c6d768", "tex": "cbf29c71", "macaw": "8af47e96", "polar_bear": "02a54afb", "p_rain": "d26ac538", "p_thermo": "0f6aae89", "p_marker": "00385934", "earth": "d1a65b60", "p_tunnel": "00ff1fcd", "cards": "f0c436f8", "bergs": "c460454f", "seal": "fa725150", "rocks": "b418c475", "eagle": "94abaae5", "p_berg": "c8343504", "camel": "c6fb2eae", "penguin": "79d0c662", "p_canoe": "5e4f8108", "p_cairn": "477e37e6", "p_tent": "8fc09e5c", "p_rug": "da979569", "p_pulk": "065ca4d9", "p_scope": "9dfa9f0a", "tahr": "e9ad3338"}</script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/utils/SkeletonUtils.js"></script>
 <script>/*PBR*/
@@ -558,11 +558,13 @@ function thermoG(hot){const G=gProp('p_thermo',2);if(!G)return null;const g=new 
 function glbAnimal(name,opt){const A=ASSETS[name];if(!A)return null;const root=A.scene.clone(true),g=new THREE.Group();g.add(root);
   root.traverse(o=>{if(!o.isMesh)return;o.castShadow=true;o.receiveShadow=true;const m=o.material=o.material.clone();
     const T=/Camel/.test(m.name)?["camel_fur",3,.8]:/Tahr_(Coat|Mane)/.test(m.name)?["tahr_fur",3.4,.7]:/Seal/.test(m.name)?["seal_skin",1.6,.35]:null;
-    if(T){const f=new THREE.MeshStandardMaterial({color:0xffffff,map:m.map||null,vertexColors:!m.map,roughness:/Seal/.test(m.name)?.55:.92,metalness:0,envMapIntensity:/Seal/.test(m.name)?.7:.4});f.name=m.name;PBR.apply(f,T[0],T[1],{normal:1,mix:m.map?0:T[2],rough:.5});o.material=f}
+    if(m.map){m.userData.noPbr=true;m.metalness=0;m.envMapIntensity=/Seal|Penguin/.test(m.name)?.6:.35;m.roughness=/Seal|Penguin/.test(m.name)?.55:.9;
+      if(T&&window.PBR){const f=new THREE.MeshStandardMaterial({color:0xffffff,map:m.map,roughness:m.roughness,metalness:0,envMapIntensity:m.envMapIntensity});f.name=m.name;PBR.apply(f,T[0],T[1],{normal:1,mix:0,rough:.5});f.userData.noPbr=true;o.material=f}}
+    else if(T){const f=new THREE.MeshStandardMaterial({color:0xffffff,vertexColors:true,roughness:/Seal/.test(m.name)?.55:.92,metalness:0,envMapIntensity:/Seal/.test(m.name)?.7:.4});f.name=m.name;PBR.apply(f,T[0],T[1],{normal:1,mix:T[2],rough:.5});o.material=f}
     else if(/Eye|Horn/.test(m.name)){m.userData.noPbr=true;m.envMapIntensity=.6}else m.userData.fur=true;
-    if(/Wing/.test(m.name)){m.side=THREE.DoubleSide;if(m.map){m.alphaTest=.5;m.transparent=false;m.userData.noPbr=true;m.userData.fur=false}}});
+    if(/Wing|Plumage/.test(m.name)&&/Macaw|Eagle/.test(m.name))o.material.side=THREE.DoubleSide});
   if(opt&&opt.scale)root.scale.setScalar(opt.scale);return g}
-function camel(){const G=glbAnimal('camel');if(G){G.userData.head=G.getObjectByName('Camel_Head');return G}const g=new THREE.Group(),tan=mat(0xc79a5e),dk=mat(0x8a643a),red=mat(0xb8402c),ey=mat(0x1a1410,{roughness:.3});
+function camel(){const G=glbAnimal('camel');if(G){G.userData.head=G.getObjectByName('Camel_Head')||new THREE.Object3D();return G}const g=new THREE.Group(),tan=mat(0xc79a5e),dk=mat(0x8a643a),red=mat(0xb8402c),ey=mat(0x1a1410,{roughness:.3});
   g.add(E(.44,.42,.86,tan,0,1.5,0),E(.3,.34,.36,tan,0,1.98,-.05),box(.72,.06,.6,red,0,1.78,-.05),box(.74,.05,.12,mat(0xebddbe),0,1.79,-.05));
   const neck=C(.12,.18,1.05,tan,0,2.0,.98);neck.rotation.x=.55;const head=new THREE.Group();head.position.set(0,2.5,1.3);
   head.add(E(.15,.15,.3,tan,0,0,.05),E(.11,.1,.14,dk,0,-.03,.3),E(.03,.03,.03,ey,-.12,.05,.1),E(.03,.03,.03,ey,.12,.05,.1),E(.04,.07,.03,tan,-.13,.16,-.1),E(.04,.07,.03,tan,.13,.16,-.1));
@@ -935,7 +937,7 @@ document.querySelectorAll('.mode').forEach(b=>b.onclick=()=>startGame(b.dataset.
 $('againTest').onclick=()=>startGame("test");$('againStudy').onclick=()=>startGame("study");
 $('soundBtn').onclick=()=>{G.sound=!G.sound;$('soundBtn').firstElementChild.className="ico "+(G.sound?"ico-snd":"ico-mute");if(!G.sound)hush()};
 $('soundBtn').classList.add('hidden');
-function loadAssets(){const names=["earth","tex","kid","rafiq","polar_bear","camel","tahr","seal","macaw","eagle","p_thermo","p_rain","p_scope","p_marker","p_canoe","p_tent","p_tunnel","p_pulk","p_cairn","p_berg","p_rug","cards","rocks","bergs"];let done=0;const L_=THREE.GLTFLoader?new THREE.GLTFLoader():null;
+function loadAssets(){const names=["earth","tex","kid","rafiq","polar_bear","camel","tahr","seal","macaw","eagle","penguin","p_thermo","p_rain","p_scope","p_marker","p_canoe","p_tent","p_tunnel","p_pulk","p_cairn","p_berg","p_rug","cards","rocks","bergs"];let done=0;const L_=THREE.GLTFLoader?new THREE.GLTFLoader():null;
   return Promise.all(names.map(n=>new Promise(res=>{const fin=()=>{done++;$('loadNote').textContent="جارٍ تجهيز الرحلة… "+done+"/"+names.length;res()};
     const sc=document.createElement('script');sc.src=(["kid","rafiq","tex"].includes(n)?"../assets/":"assets/")+n+".js?v="+((window.__AV||{})[n]||"0");sc.onerror=fin;
     sc.onload=()=>{if(n==="tex"||n==="earth"||n==="cards"||!L_){fin();return}try{const bin=atob(window.__GLB[n]);window.__GLB[n]=null;const u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);
@@ -1254,6 +1256,7 @@ function penguin(){const chick=(pCount++%5)===3,g=new THREE.Group(),body=new THR
   g.add(body);g.userData={body,fl,fr};g.scale.setScalar(chick?.6:1);return g}
 return{rainforest,kapok,conifers,palm,bigLeafPlant,penguin,rainArch,coniferArch}})();
 palm=FLORA.palm;penguin=FLORA.penguin;
+{const _pg=penguin;penguin=function(){const g0=_pg();if(g0.scale.x<.9||!ASSETS.penguin)return g0;const G=glbAnimal('penguin');const g=new THREE.Group(),body=new THREE.Group();body.add(G);g.add(body);g.userData={body,fl:new THREE.Object3D(),fr:new THREE.Object3D()};return g}}
 
 /*/GEOLOOK*/</script>
 </body>
