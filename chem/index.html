@@ -256,7 +256,7 @@ button{font-family:inherit;cursor:pointer;border:0}
 <div class="overlay hidden" id="err"><div id="loading">تعذّر تحميل المحرك ثلاثي الأبعاد. أعد تحميل الصفحة.</div></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="../web-shim.js"></script>
-<script>window.__PBR_BASE="../assets/pbr/"</script>
+<script>window.__PBR_BASE="../assets/pbr/";window.__PBRV="289a881c";window.__AV={"kid": "d070a3e5", "rafiq": "52c6d768", "tex": "cbf29c71"}</script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/utils/SkeletonUtils.js"></script>
 <script>
@@ -451,7 +451,7 @@ const AVG={};
 function measure(t){try{const im=t.image,c=document.createElement('canvas');c.width=c.height=8;const x=c.getContext('2d');x.drawImage(im,0,0,8,8);const d=x.getImageData(0,0,8,8).data;let r=0,g=0,b=0;
   const L=v=>{v/=255;return v<=.04045?v/12.92:Math.pow((v+.055)/1.055,2.4)};for(let i=0;i<d.length;i+=4){r+=L(d[i]);g+=L(d[i+1]);b+=L(d[i+2])}const n=d.length/4;t.userData.avg=new THREE.Vector3(n/Math.max(r,1e-3),n/Math.max(g,1e-3),n/Math.max(b,1e-3));
   for(const u of (t.userData.users||[]))u.value.copy(t.userData.avg)}catch(e){}}
-function tex(url,srgb){const t=loader.load(url,()=>{t.needsUpdate=true;if(srgb)measure(t)},undefined,()=>{t.userData.missing=true});t.userData=t.userData||{};t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=LITE?4:8;if(srgb)t.encoding=THREE.sRGBEncoding;t.flipY=false;return t}
+function tex(url,srgb){const t=loader.load(url+(window.__PBRV?"?v="+window.__PBRV:""),()=>{t.needsUpdate=true;if(srgb)measure(t)},undefined,()=>{t.userData.missing=true});t.userData=t.userData||{};t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=LITE?4:8;if(srgb)t.encoding=THREE.sRGBEncoding;t.flipY=false;return t}
 function set(name){if(cache[name])return cache[name];const s={name,a:tex(BASE+name+"_a.webp",true),n:LITE?null:tex(BASE+name+"_n.webp",false),r:LITE?null:tex(BASE+name+"_r.webp",false)};cache[name]=s;return s}
 const VERT_DECL='varying vec3 vPbrP;varying vec3 vPbrN;\n';
 const VERT_BODY='\nvPbrP=(modelMatrix*vec4(transformed,1.)).xyz;vPbrN=normalize(mat3(modelMatrix)*objectNormal);';
@@ -997,7 +997,7 @@ $('soundBtn').onclick=()=>{G.sound=!G.sound;$('soundBtn').firstElementChild.clas
 $('soundBtn').classList.add('hidden');
 function loadAssets(){const names=["tex","kid","rafiq"];let done=0;const L_=THREE.GLTFLoader?new THREE.GLTFLoader():null;
   return Promise.all(names.map(n=>new Promise(res=>{const fin=()=>{done++;$('loadNote').textContent="جارٍ تجهيز المعمل… "+done+"/"+names.length;res()};
-    const sc=document.createElement('script');sc.src=(["kid","rafiq","tex"].includes(n)?"../assets/":"assets/")+n+".js";sc.onerror=fin;
+    const sc=document.createElement('script');sc.src=(["kid","rafiq","tex"].includes(n)?"../assets/":"assets/")+n+".js?v="+((window.__AV||{})[n]||"0");sc.onerror=fin;
     sc.onload=()=>{if(n==="tex"||!L_){fin();return}try{const bin=atob(window.__GLB[n]);window.__GLB[n]=null;const u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);
       const cib=window.createImageBitmap;window.createImageBitmap=undefined;
       try{L_.parse(u.buffer,"",g=>{ASSETS[n]=g;g.name=n;fin()},fin)}finally{window.createImageBitmap=cib}}catch(e){fin()}};

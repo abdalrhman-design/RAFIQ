@@ -217,7 +217,7 @@ button{font-family:inherit;cursor:pointer;border:0}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="../web-shim.js"></script>
-<script>window.__PBR_BASE="../assets/pbr/"</script>
+<script>window.__PBR_BASE="../assets/pbr/";window.__PBRV="289a881c";window.__AV={"kid": "d070a3e5", "rafiq": "52c6d768", "tex": "cbf29c71", "statues": "8cf0d669", "hyk_chariot": "5575892b", "hyk_warrior": "0ff190ff", "hyk_official": "7b28f7be", "hyk_farmer": "b973b73a", "halls": "e6d300f6", "hyk_env": "10bdb9c1"}</script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/utils/SkeletonUtils.js"></script>
 <script>/*PBR*/
@@ -239,7 +239,7 @@ const AVG={};
 function measure(t){try{const im=t.image,c=document.createElement('canvas');c.width=c.height=8;const x=c.getContext('2d');x.drawImage(im,0,0,8,8);const d=x.getImageData(0,0,8,8).data;let r=0,g=0,b=0;
   const L=v=>{v/=255;return v<=.04045?v/12.92:Math.pow((v+.055)/1.055,2.4)};for(let i=0;i<d.length;i+=4){r+=L(d[i]);g+=L(d[i+1]);b+=L(d[i+2])}const n=d.length/4;t.userData.avg=new THREE.Vector3(n/Math.max(r,1e-3),n/Math.max(g,1e-3),n/Math.max(b,1e-3));
   for(const u of (t.userData.users||[]))u.value.copy(t.userData.avg)}catch(e){}}
-function tex(url,srgb){const t=loader.load(url,()=>{t.needsUpdate=true;if(srgb)measure(t)},undefined,()=>{t.userData.missing=true});t.userData=t.userData||{};t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=LITE?4:8;if(srgb)t.encoding=THREE.sRGBEncoding;t.flipY=false;return t}
+function tex(url,srgb){const t=loader.load(url+(window.__PBRV?"?v="+window.__PBRV:""),()=>{t.needsUpdate=true;if(srgb)measure(t)},undefined,()=>{t.userData.missing=true});t.userData=t.userData||{};t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=LITE?4:8;if(srgb)t.encoding=THREE.sRGBEncoding;t.flipY=false;return t}
 function set(name){if(cache[name])return cache[name];const s={name,a:tex(BASE+name+"_a.webp",true),n:LITE?null:tex(BASE+name+"_n.webp",false),r:LITE?null:tex(BASE+name+"_r.webp",false)};cache[name]=s;return s}
 const VERT_DECL='varying vec3 vPbrP;varying vec3 vPbrN;\n';
 const VERT_BODY='\nvec4 pbrW=vec4(transformed,1.);vec3 pbrN0=objectNormal;\n#ifdef USE_INSTANCING\npbrW=instanceMatrix*pbrW;pbrN0=mat3(instanceMatrix)*pbrN0;\n#endif\nvPbrP=(modelMatrix*pbrW).xyz;vPbrN=normalize(mat3(modelMatrix)*pbrN0);';
@@ -370,7 +370,7 @@ function card(s,cx,cy,cz,yaw,tilt,R){const g=new THREE.PlaneGeometry(s,s*(.85+R(
 /* ---------- textures: canvas fallback, then the photographic file if it exists ---------- */
 const BASE=()=>window.__PBR_BASE||"assets/pbr/";const TX={};
 function tex(name,w,h,draw){if(TX[name])return TX[name];const c=document.createElement('canvas');c.width=w;c.height=h;draw(c.getContext('2d'),w,h);const t=new THREE.CanvasTexture(c);t.encoding=THREE.sRGBEncoding;t.anisotropy=4;TX[name]=t;
-  const im=new Image();im.onload=()=>{t.image=im;t.needsUpdate=true};im.src=BASE()+name+".webp";return t}
+  const im=new Image();im.onload=()=>{t.image=im;t.needsUpdate=true};im.src=BASE()+name+".webp"+(window.__PBRV?"?v="+window.__PBRV:"");return t}
 function leafShape(x,L,W){x.beginPath();x.moveTo(0,0);x.bezierCurveTo(W*.9,-L*.25,W*.7,-L*.8,0,-L);x.bezierCurveTo(-W*.7,-L*.8,-W*.9,-L*.25,0,0);x.fill()}
 const leafTropical=()=>tex("leaf_tropical",512,512,(x,w,h)=>{const R=rnd(9);x.translate(w/2,h/2);
   for(let k=0;k<3;k++)for(let i=0;i<16;i++){const a=R()*TAU,d=R()*w*.18,L=w*(.2+R()*.12),W=L*(.3+R()*.1);x.save();x.rotate(a);x.translate(0,-d);
@@ -858,7 +858,7 @@ function useRafiqGLB(){const g=ASSETS.rafiq,o=fitModel(g.scene,.95),u=rafiq.user
   u.wl=new THREE.Object3D();u.wr=new THREE.Object3D();u.aL=new THREE.Object3D();u.aR=new THREE.Object3D();u.head=new THREE.Object3D();u.glb=o;u.small=true}
 function loadAssets(){const names=["tex","halls","statues","kid","rafiq","hyk_env","hyk_warrior","hyk_farmer","hyk_chariot","hyk_official"];let done=0;if(!THREE.GLTFLoader)return Promise.resolve();const L_=new THREE.GLTFLoader();
   return Promise.all(names.map(n=>new Promise(res=>{const fin=()=>{done++;$('loadNote').textContent="جارٍ تجهيز المعرض… "+done+"/"+names.length;res()};
-    const sc=document.createElement('script');sc.src=(["kid","rafiq","tex"].includes(n)?"../assets/":"assets/")+n+".js";sc.onerror=fin;
+    const sc=document.createElement('script');sc.src=(["kid","rafiq","tex"].includes(n)?"../assets/":"assets/")+n+".js?v="+((window.__AV||{})[n]||"0");sc.onerror=fin;
     sc.onload=()=>{if(n==="tex"){fin();return}try{const bin=atob(window.__GLB[n]);window.__GLB[n]=null;const u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);
       const cib=window.createImageBitmap;window.createImageBitmap=undefined;
       try{L_.parse(u.buffer,"",g=>{ASSETS[n]=g;g.name=n;fin()},fin)}finally{window.createImageBitmap=cib}}catch(e){fin()}};
